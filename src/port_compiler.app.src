@@ -1,9 +1,0 @@
-{application, port_compiler,
- [{description, "a rebar3 port compiler for native code"}
- ,{vsn, "0.1.0"}
- ,{registered, []}
- ,{applications,
-    [kernel,stdlib]}
- ,{env,[]}
- ,{modules, []}
- ]}.
