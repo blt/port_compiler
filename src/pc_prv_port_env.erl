@@ -10,8 +10,8 @@
 construct(State) ->
     construct(State, []).
 
-%% -spec construct(rebar_state:t()) -> {ok, [spec()]} |
-%%                                     {error, Reason :: any()}.
+-spec construct(rebar_state:t()) -> {ok, [pc_prv_port_specs:spec()]} |
+                                    {error, Reason :: any()}.
 construct(State, ExtraEnv) ->
     DefaultEnv  = filter_env(default_env()),
     PortEnv     = filter_env(rebar_state:get(State, port_env, [])),
@@ -36,10 +36,10 @@ merge_each_var(Vars) ->
                                      error ->
                                          %% Nothing yet defined for this key/value.
                                          %% Expand any self-references as blank.
-                                         rebar_utils:expand_env_variable(Value, Key, "");
+                                         rebar_api:expand_env_variable(Value, Key, "");
                                      {ok, Value0} ->
                                          %% Use previous definition in expansion
-                                         rebar_utils:expand_env_variable(Value, Key, Value0)
+                                         rebar_api:expand_env_variable(Value, Key, Value0)
                                  end,
                         orddict:store(Key, Evalue, Acc)
                 end, [], Vars).
@@ -52,7 +52,7 @@ expand_vars_loop(Vars) ->
     expand_vars_loop(Vars, [], dict:from_list(Vars), 10).
 
 expand_vars_loop(_Pending, _Recurse, _Vars, 0) ->
-    rebar_utils:abort("Max. expansion reached for ENV vars!\n", []);
+    rebar_api:abort("Max. expansion reached for ENV vars!\n", []);
 expand_vars_loop([], [], Vars, _Count) ->
     lists:keysort(1, dict:to_list(Vars));
 expand_vars_loop([], Recurse, Vars, Count) ->
@@ -92,7 +92,7 @@ expand_keys_in_value([], Value, _Vars) ->
 expand_keys_in_value([Key | Rest], Value, Vars) ->
     NewValue = case dict:find(Key, Vars) of
                    {ok, KValue} ->
-                       rebar_utils:expand_env_variable(Value, Key, KValue);
+                       rebar_api:expand_env_variable(Value, Key, KValue);
                    error ->
                        Value
                end,
@@ -125,7 +125,7 @@ apply_defaults(Vars, Defaults) ->
       dict:merge(fun(Key, VarValue, DefaultValue) ->
                          case is_expandable(DefaultValue) of
                              true ->
-                                 rebar_utils:expand_env_variable(DefaultValue,
+                                 rebar_api:expand_env_variable(DefaultValue,
                                                                  Key,
                                                                  VarValue);
                              false -> VarValue
@@ -202,8 +202,8 @@ default_env() ->
                                   "\" "])},
      {"ERL_EI_LIBDIR", lists:concat(["\"", erl_interface_dir(lib), "\""])},
      {"ERL_LDFLAGS"  , " -L$ERL_EI_LIBDIR -lerl_interface -lei"},
-     {"ERLANG_ARCH"  , rebar_utils:wordsize()},
-     {"ERLANG_TARGET", rebar_utils:get_arch()},
+     {"ERLANG_ARCH"  , rebar_api:wordsize()},
+     {"ERLANG_TARGET", rebar_api:get_arch()},
 
      {"darwin", "DRV_LDFLAGS",
       "-bundle -flat_namespace -undefined suppress $ERL_LDFLAGS"},

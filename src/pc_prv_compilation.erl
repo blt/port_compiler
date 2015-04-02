@@ -1,6 +1,6 @@
 -module(pc_prv_compilation).
 
--export([compile_and_link/2]).
+-export([compile_and_link/2, clean/2]).
 -export_type([]).
 
 %%%===================================================================
@@ -41,19 +41,14 @@ compile_and_link(State, Specs) ->
               end
       end, Specs).
 
-%% TODO
-%% clean(Config, AppFile) ->
-%%     case get_specs(Config, AppFile) of
-%%         [] ->
-%%             ok;
-%%         Specs ->
-%%             lists:foreach(fun(#spec{target=Target, objects=Objects}) ->
-%%                                   rebar_file_utils:delete_each([Target]),
-%%                                   rebar_file_utils:delete_each(Objects),
-%%                                   rebar_file_utils:delete_each(port_deps(Objects))
-%%                           end, Specs)
-%%     end,
-%%     ok.
+clean(_State, Specs) ->
+    lists:foreach(fun(Spec) ->
+                          Target = pc_prv_port_specs:target(Spec),
+                          Objects = pc_prv_port_specs:objects(Spec),
+                          rebar_file_utils:delete_each([Target]),
+                          rebar_file_utils:delete_each(Objects),
+                          rebar_file_utils:delete_each(port_deps(Objects))
+                  end, Specs).
 
 %%%===================================================================
 %%% Internal Functions
@@ -105,13 +100,13 @@ compiler(_)      -> "$CC".
 
 expand_command(TmplName, Env, InFiles, OutFile) ->
     Cmd0 = proplists:get_value(TmplName, Env),
-    Cmd1 = rebar_utils:expand_env_variable(Cmd0, "PORT_IN_FILES", InFiles),
-    rebar_utils:expand_env_variable(Cmd1, "PORT_OUT_FILE", OutFile).
+    Cmd1 = rebar_api:expand_env_variable(Cmd0, "PORT_IN_FILES", InFiles),
+    rebar_api:expand_env_variable(Cmd1, "PORT_OUT_FILE", OutFile).
 
 exec_compiler(Config, Source, Cmd, ShOpts) ->
     case rebar_utils:sh(Cmd, ShOpts) of
         {error, {_RC, RawError}} ->
-            AbsSource = case rebar_utils:processing_base_dir(Config) of
+            AbsSource = case rebar_api:processing_base_dir(Config) of
                             true ->
                                 Source;
                             false ->
@@ -121,7 +116,7 @@ exec_compiler(Config, Source, Cmd, ShOpts) ->
             Error = re:replace(RawError, Source, AbsSource,
                                [{return, list}, global]),
             io:format("~s", [Error]),
-            rebar_utils:abort();
+            rebar_api:abort();
         {ok, Output} ->
             io:format("Compiling ~s\n", [Source]),
             io:format("~s", [Output])

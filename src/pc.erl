@@ -33,7 +33,7 @@
 
 -export([init/1, do/1, format_error/1]).
 
--define(PROVIDER, port_compiler).
+-define(PROVIDER, pc).
 -define(DEPS, [app_discovery,install_deps]).
 
 %% Supported configuration variables:
@@ -97,7 +97,7 @@ init(State) ->
                                  {module, ?MODULE},           % The module implementation of the task
                                  {bare, true},                % The task can be run by the user, always true
                                  {deps, ?DEPS},               % The list of dependencies
-                                 {example, "rebar port_compiler"}, % How to use the plugin
+                                 {example, "rebar pc"}, % How to use the plugin
                                  {opts, []},                  % list of options understood by the plugin
                                  {short_desc, "a rebar3 port compiler for native code"},
                                  {desc, ""}
@@ -107,8 +107,14 @@ init(State) ->
 
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
+    {[{task,Task}],[]} = rebar_state:command_parsed_args(State),
     {ok, PortSpecs} = pc_prv_port_specs:construct(State),
-    ok = pc_prv_compilation:compile_and_link(PortSpecs),
+    case Task of
+        "compile" ->
+            ok = pc_prv_compilation:compile_and_link(State, PortSpecs);
+        "clean" ->
+            ok = pc_prv_compilation:clean(State, PortSpecs)
+    end,
     {ok, State}.
 
 -spec format_error(any()) ->  iolist().

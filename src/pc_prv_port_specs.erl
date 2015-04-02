@@ -96,6 +96,7 @@ fill_in_defaults(Opts) ->
     end.
 
 port_opt(State, {env, Env}) ->
-    {env, pc_prv_port_env:construct(State, Env)};
+    {ok, PortEnv} = pc_prv_port_env:construct(State, Env),
+    {env, PortEnv};
 port_opt(_State, Opt) ->
     Opt.
