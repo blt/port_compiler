@@ -15,6 +15,17 @@ Add the plugin to your `rebar.config`:
     {plugins, [
         { pc, {git, "git@github.com:blt/port_compiler.git", {tag, "0.1.0"}}}
     ]}.
+    {provider_hooks,
+     [
+      {pre,
+       [
+        {compile, {pc, compile}},
+        {clean, {pc, clean}}
+       ]
+      }
+     ]
+    }.
+
 
 From your existing application:
 
@@ -26,3 +37,59 @@ From your existing application:
     Compiling ...
 
 You should now have native code compiled.
+
+- - -
+
+BELOW HERE BE DRAGONS
+
+```
+%% Supported configuration variables:
+%%
+%% * port_specs - Erlang list of tuples of the forms
+%%                {ArchRegex, TargetFile, Sources, Options}
+%%                {ArchRegex, TargetFile, Sources}
+%%                {TargetFile, Sources}
+%%
+%% * port_env - Erlang list of key/value pairs which will control
+%%              the environment when running the compiler and linker.
+%%
+%%              By default, the following variables are defined:
+%%              CC       - C compiler
+%%              CXX      - C++ compiler
+%%              CFLAGS   - C compiler
+%%              CXXFLAGS - C++ compiler
+%%              LDFLAGS  - Link flags
+%%              ERL_CFLAGS  - default -I paths for erts and ei
+%%              ERL_LDFLAGS - default -L and -lerl_interface -lei
+%%              DRV_CFLAGS  - flags that will be used for compiling
+%%              DRV_LDFLAGS - flags that will be used for linking
+%%              EXE_CFLAGS  - flags that will be used for compiling
+%%              EXE_LDFLAGS - flags that will be used for linking
+%%              ERL_EI_LIBDIR - ei library directory
+%%              DRV_CXX_TEMPLATE  - C++ command template
+%%              DRV_CC_TEMPLATE   - C command template
+%%              DRV_LINK_TEMPLATE - Linker command template
+%%              EXE_CXX_TEMPLATE  - C++ command template
+%%              EXE_CC_TEMPLATE   - C command template
+%%              EXE_LINK_TEMPLATE - Linker command template
+%%              PORT_IN_FILES - contains a space separated list of input
+%%                   file(s), (used in command template)
+%%              PORT_OUT_FILE - contains the output filename (used in
+%%                   command template)
+%%
+%%              Note that if you wish to extend (vs. replace) these variables,
+%%              you MUST include a shell-style reference in your definition.
+%%              e.g. to extend CFLAGS, do something like:
+%%
+%%              {port_env, [{"CFLAGS", "$CFLAGS -MyOtherOptions"}]}
+%%
+%%              It is also possible to specify platform specific options
+%%              by specifying a triplet where the first string is a regex
+%%              that is checked against Erlang's system architecture string.
+%%              e.g. to specify a CFLAG that only applies to x86_64 on linux
+%%              do:
+%%
+%%              {port_env, [{"x86_64.*-linux", "CFLAGS",
+%%                           "$CFLAGS -X86Options"}]}
+%%
+```

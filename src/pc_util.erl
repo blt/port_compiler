@@ -1,4 +1,4 @@
--module(pc_prv_util).
+-module(pc_util).
 
 -export([
          replace_extension/2, replace_extension/3,

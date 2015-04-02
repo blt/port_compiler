@@ -1,4 +1,32 @@
--module(pc_prv_port_specs).
+%% -------------------------------------------------------------------
+%%
+%% This file contains substantial portions of the original rebar_port_compiler.
+%% Special thanks to all the folks that contributed to that effort.
+%%
+%% -------------------------------------------------------------------
+%%
+%% Copyright (c) 2009 Dave Smith (dizzyd@dizzyd.com)
+%%
+%% Permission is hereby granted, free of charge, to any person obtaining a copy
+%% of this software and associated documentation files (the "Software"), to deal
+%% in the Software without restriction, including without limitation the rights
+%% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+%% copies of the Software, and to permit persons to whom the Software is
+%% furnished to do so, subject to the following conditions:
+%%
+%% The above copyright notice and this permission notice shall be included in
+%% all copies or substantial portions of the Software.
+%%
+%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+%% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+%% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+%% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+%% THE SOFTWARE.
+%%
+%% -------------------------------------------------------------------
+-module(pc_port_specs).
 
 -export([
          construct/1,
@@ -60,8 +88,8 @@ get_port_spec(Config, OsType, {Arch, Target, Sources}) ->
     get_port_spec(Config, OsType, {Arch, Target, Sources, []});
 get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
     SourceFiles = lists:flatmap(fun filelib:wildcard/1, Sources),
-    ObjectFiles = [pc_prv_util:replace_extension(O, ".o") || O <- SourceFiles],
-    #spec{type    = pc_prv_util:target_type(Target),
+    ObjectFiles = [pc_util:replace_extension(O, ".o") || O <- SourceFiles],
+    #spec{type    = pc_util:target_type(Target),
           target  = coerce_extension(OsType, Target),
           sources = SourceFiles,
           objects = ObjectFiles,
@@ -96,7 +124,7 @@ fill_in_defaults(Opts) ->
     end.
 
 port_opt(State, {env, Env}) ->
-    {ok, PortEnv} = pc_prv_port_env:construct(State, Env),
+    {ok, PortEnv} = pc_port_env:construct(State, Env),
     {env, PortEnv};
 port_opt(_State, Opt) ->
     Opt.

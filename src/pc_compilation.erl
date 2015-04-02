@@ -1,4 +1,32 @@
--module(pc_prv_compilation).
+%% -------------------------------------------------------------------
+%%
+%% This file contains substantial portions of the original rebar_port_compiler.
+%% Special thanks to all the folks that contributed to that effort.
+%%
+%% -------------------------------------------------------------------
+%%
+%% Copyright (c) 2009 Dave Smith (dizzyd@dizzyd.com)
+%%
+%% Permission is hereby granted, free of charge, to any person obtaining a copy
+%% of this software and associated documentation files (the "Software"), to deal
+%% in the Software without restriction, including without limitation the rights
+%% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+%% copies of the Software, and to permit persons to whom the Software is
+%% furnished to do so, subject to the following conditions:
+%%
+%% The above copyright notice and this permission notice shall be included in
+%% all copies or substantial portions of the Software.
+%%
+%% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+%% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+%% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+%% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+%% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+%% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+%% THE SOFTWARE.
+%%
+%% -------------------------------------------------------------------
+-module(pc_compilation).
 
 -export([compile_and_link/2, clean/2]).
 -export_type([]).
@@ -8,14 +36,14 @@
 %%%===================================================================
 
 -spec compile_and_link(State :: rebar_state:t(),
-                       Specs :: pc_prv_port_specs:spec()) -> ok.
+                       Specs :: pc_port_specs:spec()) -> ok.
 compile_and_link(State, Specs) ->
     %% Compile each of the sources
     NewBins = compile_sources(State, Specs),
 
     %% Make sure that the target directories exist
     lists:foreach(fun(Spec) ->
-                          Target = pc_prv_port_specs:target(Spec),
+                          Target = pc_port_specs:target(Spec),
                           ok = filelib:ensure_dir(Target)
                   end, Specs),
 
@@ -23,15 +51,15 @@ compile_and_link(State, Specs) ->
     %% and list of new binaries
     lists:foreach(
       fun(Spec) ->
-              Target = pc_prv_port_specs:target(Spec),
-              Bins   = pc_prv_port_specs:objects(Spec),
+              Target = pc_port_specs:target(Spec),
+              Bins   = pc_port_specs:objects(Spec),
               AllBins = [sets:from_list(Bins),
                          sets:from_list(NewBins)],
               Intersection = sets:intersection(AllBins),
               case needs_link(Target, sets:to_list(Intersection)) of
                   true ->
                       LinkTemplate = select_link_template(Target),
-                      Env = pc_prv_port_specs:environment(Spec),
+                      Env = pc_port_specs:environment(Spec),
                       Cmd = expand_command(LinkTemplate, Env,
                                            string:join(Bins, " "),
                                            Target),
@@ -43,8 +71,8 @@ compile_and_link(State, Specs) ->
 
 clean(_State, Specs) ->
     lists:foreach(fun(Spec) ->
-                          Target = pc_prv_port_specs:target(Spec),
-                          Objects = pc_prv_port_specs:objects(Spec),
+                          Target = pc_port_specs:target(Spec),
+                          Objects = pc_port_specs:objects(Spec),
                           rebar_file_utils:delete_each([Target]),
                           rebar_file_utils:delete_each(Objects),
                           rebar_file_utils:delete_each(port_deps(Objects))
@@ -55,7 +83,7 @@ clean(_State, Specs) ->
 %%%===================================================================
 
 port_deps(SourceFiles) ->
-    [pc_prv_util:replace_extension(O, ".d") || O <- SourceFiles].
+    [pc_util:replace_extension(O, ".d") || O <- SourceFiles].
 
 %%
 %% == compilation ==
@@ -64,9 +92,9 @@ port_deps(SourceFiles) ->
 compile_sources(Config, Specs) ->
     lists:foldl(
       fun(Spec, NewBins) ->
-              Sources = pc_prv_port_specs:sources(Spec),
-              Type    = pc_prv_port_specs:type(Spec),
-              Env     = pc_prv_port_specs:environment(Spec),
+              Sources = pc_port_specs:sources(Spec),
+              Type    = pc_port_specs:type(Spec),
+              Env     = pc_port_specs:environment(Spec),
               compile_each(Config, Sources, Type, Env, NewBins)
       end, [], Specs).
 
@@ -74,7 +102,7 @@ compile_each(_Config, [], _Type, _Env, NewBins) ->
     lists:reverse(NewBins);
 compile_each(Config, [Source | Rest], Type, Env, NewBins) ->
     Ext = filename:extension(Source),
-    Bin = pc_prv_util:replace_extension(Source, Ext, ".o"),
+    Bin = pc_util:replace_extension(Source, Ext, ".o"),
     case needs_compile(Source, Bin) of
         true ->
             Template = select_compile_template(Type, compiler(Ext)),
@@ -170,7 +198,7 @@ needs_link(SoName, NewBins) ->
     end.
 
 select_link_template(Target) ->
-    case pc_prv_util:target_type(Target) of
+    case pc_util:target_type(Target) of
         drv -> "DRV_LINK_TEMPLATE";
         exe -> "EXE_LINK_TEMPLATE"
     end.
