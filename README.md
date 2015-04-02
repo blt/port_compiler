@@ -1,26 +1,28 @@
 port_compiler
 =====
 
-a rebar3 port compiler for native code
+A port compiler for rebar3.
 
-Build
------
-
-    $ rebar3 compile
+This plugin is intended to replicate the rebar2 support for compiling native
+code. It is not a drop-in replacement in terms of command-line interface but the
+exact configuration interface in projects' `rebar.config`s have been preserved.
 
 Use
 ---
 
-Add the plugin to your rebar config:
+Add the plugin to your `rebar.config`:
 
     {plugins, [
-        { port_compiler, ".*", {git, "git@host:user/port_compiler.git", {tag, "0.1.0"}}}
+        { pc, {git, "git@github.com:blt/port_compiler.git", {tag, "0.1.0"}}}
     ]}.
 
-Then just call your plugin directly in an existing application:
+From your existing application:
 
 
-    $ rebar3 port_compiler
-    ===> Fetching port_compiler
-    ===> Compiling port_compiler
-    <Plugin Output>
+    $ rebar3 pc compile
+    ===> Fetching pc
+    ===> Compiling pc
+    ===> Verifying dependencies...
+    Compiling ...
+
+You should now have native code compiled.
