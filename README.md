@@ -38,6 +38,12 @@ From your existing application:
 
 You should now have native code compiled.
 
+Example
+---
+
+Looking for an example? See my fork of jiffy here and the changes to its
+`rebar.config`: https://github.com/blt/jiffy/commit/d4a0103daec5a646e71045bdf40f12a3eb82ace5
+
 - - -
 
 BELOW HERE BE DRAGONS
