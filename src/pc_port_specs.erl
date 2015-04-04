@@ -87,10 +87,14 @@ get_port_spec(Config, OsType, {Target, Sources}) ->
 get_port_spec(Config, OsType, {Arch, Target, Sources}) ->
     get_port_spec(Config, OsType, {Arch, Target, Sources, []});
 get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
-    SourceFiles = lists:flatmap(fun filelib:wildcard/1, Sources),
+    SourceFiles = lists:flatmap(fun(Source) ->
+                                        Source1 = filename:join(rebar_state:dir(Config), Source),
+                                        filelib:wildcard(Source1)
+                                end, Sources),
+    Target1 = filename:join(rebar_state:dir(Config), Target),
     ObjectFiles = [pc_util:replace_extension(O, ".o") || O <- SourceFiles],
-    #spec{type    = pc_util:target_type(Target),
-          target  = coerce_extension(OsType, Target),
+    #spec{type    = pc_util:target_type(Target1),
+          target  = coerce_extension(OsType, Target1),
           sources = SourceFiles,
           objects = ObjectFiles,
           opts    = [port_opt(Config, O) || O <- fill_in_defaults(Opts)]}.
