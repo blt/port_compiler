@@ -56,7 +56,7 @@
 construct(State) ->
     case rebar_state:get(State, port_specs, []) of
         [] ->
-            {error, undefined_port_specs};
+            {ok, [port_spec_from_legacy(State)]};
         PortSpecs ->
             Filtered = lists:filter(fun filter_port_spec/1, PortSpecs),
             Specs = [get_port_spec(State, os:type(), Spec) || Spec <- Filtered],
@@ -75,12 +75,50 @@ type(#spec{type = Type})          -> Type.
 %%% Internal Functions
 %%%===================================================================
 
+port_spec_from_legacy(Config) ->
+    %% Get the target from the so_name variable
+    AName = rebar_state:get(Config, so_name),
+    Target = filename:join("priv", AName),
+    %% Get the list of source files from port_sources
+    Sources = port_sources(rebar_state:get(Config, port_sources,
+                                                 ["c_src/*.c"])),
+    #spec { type = target_type(Target),
+            target = maybe_switch_extension(os:type(), Target),
+            sources = Sources,
+            objects = port_objects(Sources),
+            opts    = [port_opt(Config, O) || O <- fill_in_defaults([])]}.
+
+port_sources(Sources) ->
+    lists:flatmap(fun filelib:wildcard/1, Sources).
+
+target_type(Target) -> target_type1(filename:extension(Target)).
+
+target_type1(".so")  -> drv;
+target_type1(".dll") -> drv;
+target_type1("")     -> exe;
+target_type1(".exe") -> exe.
+
+maybe_switch_extension({win32, nt}, Target) ->
+    switch_to_dll_or_exe(Target);
+maybe_switch_extension(_OsType, Target) ->
+    Target.
+
+port_objects(SourceFiles) ->
+    [replace_extension(O, ".o") || O <- SourceFiles].
+
 filter_port_spec({ArchRegex, _, _, _}) ->
     rebar_utils:is_arch(ArchRegex);
 filter_port_spec({ArchRegex, _, _}) ->
     rebar_utils:is_arch(ArchRegex);
 filter_port_spec({_, _}) ->
     true.
+
+replace_extension(File, NewExt) ->
+    OldExt = filename:extension(File),
+    replace_extension(File, OldExt, NewExt).
+
+replace_extension(File, OldExt, NewExt) ->
+    filename:rootname(File, OldExt) ++ NewExt.
 
 get_port_spec(Config, OsType, {Target, Sources}) ->
     get_port_spec(Config, OsType, {undefined, Target, Sources, []});
