@@ -7,8 +7,8 @@ This plugin is intended to replicate the rebar2 support for compiling native
 code. It is not a drop-in replacement in terms of command-line interface but the
 exact configuration interface in projects' `rebar.config`s have been preserved.
 
-Use
----
+Use In Your Project
+---------------------
 
 Add the plugin to your `rebar.config`:
 
@@ -37,6 +37,35 @@ From your existing application:
     Compiling ...
 
 You should now have native code compiled.
+
+Use with Existing Dependency
+-----------------------------
+
+If your project depends on a dependency that used the rebar2 port compiler instead of forking and changing the `rebar.config` of that dependency you can use [overrides](http://www.rebar3.org/v3.0/docs/configuration#overrides) to inject the changes from your top level `rebar.config`. Using [jiffy](https://github.com/davisp/jiffy) as an example:
+
+
+```erlang
+{deps, [
+  {jiffy, {git, "git@github.com:davisp/jiffy.git", {branch, "master"}}}
+]}.
+
+{overrides,
+ [{override, jiffy, [
+     {plugins, [
+         {pc, {git, "git@github.com:blt/port_compiler.git", {branch, "master"}}}
+     ]},
+
+     {provider_hooks, [
+         {post,
+             [
+             {compile, {pc, compile}},
+             {clean, {pc, clean}}
+             ]
+          }]
+      }
+  ]}
+]}.
+```
 
 Example
 ---

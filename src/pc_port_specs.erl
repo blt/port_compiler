@@ -82,7 +82,7 @@ port_spec_from_legacy(Config) ->
     %% Get the list of source files from port_sources
     Sources = port_sources(rebar_state:get(Config, port_sources,
                                                  ["c_src/*.c"])),
-    #spec { type = target_type(Target),
+    #spec { type = pc_util:target_type(Target),
             target = maybe_switch_extension(os:type(), Target),
             sources = Sources,
             objects = port_objects(Sources),
@@ -91,20 +91,13 @@ port_spec_from_legacy(Config) ->
 port_sources(Sources) ->
     lists:flatmap(fun filelib:wildcard/1, Sources).
 
-target_type(Target) -> target_type1(filename:extension(Target)).
-
-target_type1(".so")  -> drv;
-target_type1(".dll") -> drv;
-target_type1("")     -> exe;
-target_type1(".exe") -> exe.
-
 maybe_switch_extension({win32, nt}, Target) ->
     switch_to_dll_or_exe(Target);
 maybe_switch_extension(_OsType, Target) ->
     Target.
 
 port_objects(SourceFiles) ->
-    [replace_extension(O, ".o") || O <- SourceFiles].
+    [pc_util:replace_extension(O, ".o") || O <- SourceFiles].
 
 filter_port_spec({ArchRegex, _, _, _}) ->
     rebar_utils:is_arch(ArchRegex);
@@ -112,13 +105,6 @@ filter_port_spec({ArchRegex, _, _}) ->
     rebar_utils:is_arch(ArchRegex);
 filter_port_spec({_, _}) ->
     true.
-
-replace_extension(File, NewExt) ->
-    OldExt = filename:extension(File),
-    replace_extension(File, OldExt, NewExt).
-
-replace_extension(File, OldExt, NewExt) ->
-    filename:rootname(File, OldExt) ++ NewExt.
 
 get_port_spec(Config, OsType, {Target, Sources}) ->
     get_port_spec(Config, OsType, {undefined, Target, Sources, []});
