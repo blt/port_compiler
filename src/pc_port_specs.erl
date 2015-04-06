@@ -56,7 +56,7 @@
 construct(State) ->
     case rebar_state:get(State, port_specs, []) of
         [] ->
-            {error, undefined_port_specs};
+            {ok, [port_spec_from_legacy(State)]};
         PortSpecs ->
             Filtered = lists:filter(fun filter_port_spec/1, PortSpecs),
             Specs = [get_port_spec(State, os:type(), Spec) || Spec <- Filtered],
@@ -75,6 +75,30 @@ type(#spec{type = Type})          -> Type.
 %%% Internal Functions
 %%%===================================================================
 
+port_spec_from_legacy(Config) ->
+    %% Get the target from the so_name variable
+    AName = rebar_state:get(Config, so_name),
+    Target = filename:join("priv", AName),
+    %% Get the list of source files from port_sources
+    Sources = port_sources(rebar_state:get(Config, port_sources,
+                                                 ["c_src/*.c"])),
+    #spec { type = pc_util:target_type(Target),
+            target = maybe_switch_extension(os:type(), Target),
+            sources = Sources,
+            objects = port_objects(Sources),
+            opts    = [port_opt(Config, O) || O <- fill_in_defaults([])]}.
+
+port_sources(Sources) ->
+    lists:flatmap(fun filelib:wildcard/1, Sources).
+
+maybe_switch_extension({win32, nt}, Target) ->
+    switch_to_dll_or_exe(Target);
+maybe_switch_extension(_OsType, Target) ->
+    Target.
+
+port_objects(SourceFiles) ->
+    [pc_util:replace_extension(O, ".o") || O <- SourceFiles].
+
 filter_port_spec({ArchRegex, _, _, _}) ->
     rebar_utils:is_arch(ArchRegex);
 filter_port_spec({ArchRegex, _, _}) ->
@@ -87,10 +111,14 @@ get_port_spec(Config, OsType, {Target, Sources}) ->
 get_port_spec(Config, OsType, {Arch, Target, Sources}) ->
     get_port_spec(Config, OsType, {Arch, Target, Sources, []});
 get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
-    SourceFiles = lists:flatmap(fun filelib:wildcard/1, Sources),
+    SourceFiles = lists:flatmap(fun(Source) ->
+                                        Source1 = filename:join(rebar_state:dir(Config), Source),
+                                        filelib:wildcard(Source1)
+                                end, Sources),
+    Target1 = filename:join(rebar_state:dir(Config), Target),
     ObjectFiles = [pc_util:replace_extension(O, ".o") || O <- SourceFiles],
-    #spec{type    = pc_util:target_type(Target),
-          target  = coerce_extension(OsType, Target),
+    #spec{type    = pc_util:target_type(Target1),
+          target  = coerce_extension(OsType, Target1),
           sources = SourceFiles,
           objects = ObjectFiles,
           opts    = [port_opt(Config, O) || O <- fill_in_defaults(Opts)]}.

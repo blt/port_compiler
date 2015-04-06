@@ -63,7 +63,7 @@ compile_and_link(State, Specs) ->
                       Cmd = expand_command(LinkTemplate, Env,
                                            string:join(Bins, " "),
                                            Target),
-                      rebar_utils:sh(Cmd, [{env, Env}]);
+                      rebar_utils:sh(Cmd, [{env, Env}, {cd, rebar_state:dir(State)}]);
                   false ->
                       ok
               end
