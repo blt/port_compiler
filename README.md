@@ -13,7 +13,7 @@ Use In Your Project
 Add the plugin to your `rebar.config`:
 
     {plugins, [
-        { pc, {git, "git@github.com:blt/port_compiler.git", {tag, "0.1.0"}}}
+        { pc, {git, "git@github.com:blt/port_compiler.git", {branch, "master"}}}
     ]}.
     {provider_hooks,
      [
