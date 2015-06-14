@@ -44,7 +44,7 @@ compile_and_link(State, Specs) ->
     %% Make sure that the target directories exist
     lists:foreach(fun(Spec) ->
                           Target = pc_port_specs:target(Spec),
-                          ok = filelib:ensure_dir(Target)
+                          ok = filelib:ensure_dir(filename:join(rebar_state:dir(State), Target))
                   end, Specs),
 
     %% Only relink if necessary, given the Target
@@ -63,6 +63,7 @@ compile_and_link(State, Specs) ->
                       Cmd = expand_command(LinkTemplate, Env,
                                            string:join(Bins, " "),
                                            Target),
+                      rebar_api:info("Linking ~s", [Target]),
                       rebar_utils:sh(Cmd, [{env, Env}, {cd, rebar_state:dir(State)}]);
                   false ->
                       ok
@@ -107,7 +108,7 @@ compile_each(Config, [Source | Rest], Type, Env, NewBins) ->
         true ->
             Template = select_compile_template(Type, compiler(Ext)),
             Cmd = expand_command(Template, Env, Source, Bin),
-            ShOpts = [{env, Env}, return_on_error, {use_stdout, false}],
+            ShOpts = [{env, Env}, return_on_error, {use_stdout, false}, {cd, rebar_state:dir(Config)}],
             exec_compiler(Config, Source, Cmd, ShOpts),
             compile_each(Config, Rest, Type, Env, [Bin | NewBins]);
         false ->
@@ -140,14 +141,14 @@ exec_compiler(Config, Source, Cmd, ShOpts) ->
                             false ->
                                 filename:absname(Source)
                         end,
-            io:format("Compiling ~s\n", [AbsSource]),
+            rebar_api:info("Compiling ~s", [AbsSource]),
             Error = re:replace(RawError, Source, AbsSource,
                                [{return, list}, global]),
-            io:format("~s", [Error]),
+            rebar_api:error("~s", [Error]),
             rebar_api:abort();
         {ok, Output} ->
-            io:format("Compiling ~s\n", [Source]),
-            io:format("~s", [Output])
+            rebar_api:info("Compiling ~s", [Source]),
+            rebar_api:debug("~s", [Output])
     end.
 
 select_compile_template(drv, Compiler) ->
