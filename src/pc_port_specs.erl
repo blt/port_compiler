@@ -80,16 +80,17 @@ port_spec_from_legacy(Config) ->
     AName = rebar_state:get(Config, so_name),
     Target = filename:join("priv", AName),
     %% Get the list of source files from port_sources
-    Sources = port_sources(rebar_state:get(Config, port_sources,
-                                                 ["c_src/*.c"])),
+    Sources = port_sources(rebar_state:dir(Config), rebar_state:get(Config, port_sources, ["c_src/*.c"])),
     #spec { type = pc_util:target_type(Target),
             target = maybe_switch_extension(os:type(), Target),
             sources = Sources,
             objects = port_objects(Sources),
             opts    = [port_opt(Config, O) || O <- fill_in_defaults([])]}.
 
-port_sources(Sources) ->
-    lists:flatmap(fun filelib:wildcard/1, Sources).
+port_sources(WorkDir, Sources) ->
+    lists:flatmap(fun (Source) ->
+                      filelib:wildcard(Source, WorkDir)
+                  end, Sources).
 
 maybe_switch_extension({win32, nt}, Target) ->
     switch_to_dll_or_exe(Target);
