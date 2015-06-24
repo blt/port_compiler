@@ -1,7 +1,7 @@
 {application, pc,
  [
   {description, "a rebar3 port compiler for native code"},
-  {vsn, "0.1.0"},
+  {vsn, "0.2.0"},
   {registered, []},
   {applications,
    [
@@ -9,5 +9,9 @@
     stdlib
    ]},
   {env,[]},
-  {modules, []}
+  {modules, []},
+
+  {contributors, ["Brian L. Troutwine"]},
+  {licenses, ["MIT"]},
+  {links, [{"Github", "https://github.com/blt/port_compiler"}]}
  ]}.
