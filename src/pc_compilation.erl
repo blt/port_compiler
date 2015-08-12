@@ -178,10 +178,8 @@ bin_deps(Bin) ->
     end.
 
 parse_bin_deps(Bin, Deps) ->
-    Sz = size(Bin),
-    <<Bin:Sz/binary, ": ", X/binary>> = Deps,
-    Ds = re:split(X, "\\s*\\\\\\R\\s*|\\s+", [{return, binary}]),
-    [D || D <- Ds, D =/= <<>>].
+    Ds = re:split(Deps, "\\s*\\\\\\R\\s*|\\s+", [{return, binary}]),
+    [D || D <- Ds, D =/= <<>>, D =/= <<Bin/binary,":">>].
 
 %%
 %% == linking ==
