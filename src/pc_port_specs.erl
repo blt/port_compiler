@@ -77,8 +77,20 @@ type(#spec{type = Type})          -> Type.
 
 port_spec_from_legacy(Config) ->
     %% Get the target from the so_name variable
-    AName = rebar_state:get(Config, so_name),
-    Target = filename:join("priv", AName),
+    Target = case rebar_state:get(Config, so_name, undefined) of
+                 undefined ->
+                     %% Generate a sensible default from app file
+                     AppName = case rebar_state:current_app(Config) of
+                                      undefined ->
+                                          throw({error, {pc_prv_compile, no_app}});
+                                      CurrentApp ->
+                                          rebar_app_info:name(CurrentApp)
+                                  end,
+                     filename:join("priv", lists:concat([AppName, "_drv.so"]));
+                 AName ->
+                     filename:join("priv", AName)
+             end,
+
     %% Get the list of source files from port_sources
     Sources = port_sources(rebar_state:dir(Config), rebar_state:get(Config, port_sources, ["c_src/*.c"])),
     #spec { type = pc_util:target_type(Target),

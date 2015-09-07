@@ -33,10 +33,24 @@ init(State) ->
 
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
-    {ok, PortSpecs} = pc_port_specs:construct(State),
-    ok = pc_compilation:compile_and_link(State, PortSpecs),
+    Apps = case rebar_state:current_app(State) of
+               undefined ->
+                   rebar_state:project_apps(State);
+               AppInfo ->
+                   [AppInfo]
+           end,
+
+    [begin
+         Opts = rebar_app_info:opts(AppInfo1),
+         State1 = rebar_state:opts(State, Opts),
+         {ok, PortSpecs} = pc_port_specs:construct(State1),
+         ok = pc_compilation:compile_and_link(State1, PortSpecs)
+     end || AppInfo1 <- Apps],
+
     {ok, State}.
 
 -spec format_error(any()) ->  iolist().
+format_error(no_app) ->
+    io_lib:format("No so_name or application defined.", []);
 format_error(Reason) ->
     io_lib:format("~p", [Reason]).
