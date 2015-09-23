@@ -135,12 +135,7 @@ expand_command(TmplName, Env, InFiles, OutFile) ->
 exec_compiler(Config, Source, Cmd, ShOpts) ->
     case rebar_utils:sh(Cmd, ShOpts) of
         {error, {_RC, RawError}} ->
-            AbsSource = case rebar_api:processing_base_dir(Config) of
-                            true ->
-                                Source;
-                            false ->
-                                filename:absname(Source)
-                        end,
+            AbsSource = filename:absname(Source),
             rebar_api:info("Compiling ~s", [AbsSource]),
             Error = re:replace(RawError, Source, AbsSource,
                                [{return, list}, global]),
