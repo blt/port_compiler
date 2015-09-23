@@ -132,7 +132,7 @@ expand_command(TmplName, Env, InFiles, OutFile) ->
     Cmd1 = rebar_api:expand_env_variable(Cmd0, "PORT_IN_FILES", InFiles),
     rebar_api:expand_env_variable(Cmd1, "PORT_OUT_FILE", OutFile).
 
-exec_compiler(Config, Source, Cmd, ShOpts) ->
+exec_compiler(_Config, Source, Cmd, ShOpts) ->
     case rebar_utils:sh(Cmd, ShOpts) of
         {error, {_RC, RawError}} ->
             AbsSource = filename:absname(Source),
