@@ -84,7 +84,8 @@ port_spec_from_legacy(Config) ->
                                       undefined ->
                                           throw({error, {pc_prv_compile, no_app}});
                                       CurrentApp ->
-                                          rebar_app_info:name(CurrentApp)
+                                          BAppName = rebar_app_info:name(CurrentApp),
+                                          binary_to_list(BAppName)
                                   end,
                      filename:join("priv", lists:concat([AppName, "_drv.so"]));
                  AName ->
