@@ -45,16 +45,12 @@ If your project depends on a dependency that used the rebar2 port compiler inste
 
 
 ```erlang
-{deps, [
-  {jiffy, {git, "git@github.com:davisp/jiffy.git", {branch, "master"}}}
-]}.
+{deps, [jiffy]}.
 
 {overrides,
  [{override, jiffy, [
-     {plugins, [
-         {pc, {git, "git@github.com:blt/port_compiler.git", {branch, "master"}}}
-     ]},
-
+     {plugins, [pc]},
+     {artifacts, ["priv/jiffy.so"]},
      {provider_hooks, [
          {post,
              [
