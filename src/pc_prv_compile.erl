@@ -8,6 +8,7 @@
 
 -export([init/1, do/1, format_error/1]).
 
+-define(NAMESPACE, pc).
 -define(PROVIDER, compile).
 -define(DEPS, [{default, compile}]).
 
@@ -40,12 +41,20 @@ do(State) ->
                    [AppInfo]
            end,
 
+    Cwd = rebar_state:dir(State),
+    Providers = rebar_state:providers(State),
+    rebar_hooks:run_all_hooks(
+      Cwd, pre, {?NAMESPACE, ?PROVIDER}, Providers, State),
+
     [begin
          Opts = rebar_app_info:opts(AppInfo1),
          State1 = rebar_state:opts(State, Opts),
          {ok, PortSpecs} = pc_port_specs:construct(State1),
          ok = pc_compilation:compile_and_link(State1, PortSpecs)
      end || AppInfo1 <- Apps],
+
+    rebar_hooks:run_all_hooks(
+      Cwd, post, {?NAMESPACE, ?PROVIDER}, Providers, State),
 
     {ok, State}.
 

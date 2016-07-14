@@ -8,6 +8,7 @@
 
 -export([init/1, do/1, format_error/1]).
 
+-define(NAMESPACE, pc).
 -define(PROVIDER, clean).
 -define(DEPS, [{default, app_discovery}]).
 
@@ -33,8 +34,16 @@ init(State) ->
 
 -spec do(rebar_state:t()) -> {ok, rebar_state:t()} | {error, string()}.
 do(State) ->
+    Cwd = rebar_state:dir(State),
+    Providers = rebar_state:providers(State),
+    rebar_hooks:run_all_hooks(
+      Cwd, pre, {?NAMESPACE, ?PROVIDER}, Providers, State),
+
     {ok, PortSpecs} = pc_port_specs:construct(State),
     ok = pc_compilation:clean(State, PortSpecs),
+
+    rebar_hooks:run_all_hooks(
+      Cwd, post, {?NAMESPACE, ?PROVIDER}, Providers, State),
     {ok, State}.
 
 -spec format_error(any()) ->  iolist().
