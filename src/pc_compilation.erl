@@ -36,7 +36,7 @@
 %%%===================================================================
 
 -spec compile_and_link(State :: rebar_state:t(),
-                       Specs :: pc_port_specs:spec()) -> ok.
+                       Specs :: [pc_port_specs:spec()]) -> ok.
 compile_and_link(State, Specs) ->
     %% Compile each of the sources
     NewBins = compile_sources(State, Specs),
