@@ -28,7 +28,7 @@
 %% -------------------------------------------------------------------
 -module(pc_compilation).
 
--export([compile_and_link/2, clean/2]).
+-export([compile_and_link/2, clean/2, compiler/1]).
 -export_type([]).
 
 %%%===================================================================
@@ -51,14 +51,15 @@ compile_and_link(State, Specs) ->
     %% and list of new binaries
     lists:foreach(
       fun(Spec) ->
-              Target = pc_port_specs:target(Spec),
-              Bins   = pc_port_specs:objects(Spec),
+              Target  = pc_port_specs:target(Spec),
+              Bins    = pc_port_specs:objects(Spec),
               AllBins = [sets:from_list(Bins),
                          sets:from_list(NewBins)],
               Intersection = sets:intersection(AllBins),
               case needs_link(Target, sets:to_list(Intersection)) of
                   true ->
-                      LinkTemplate = select_link_template(Target),
+                      LinkLang = pc_port_specs:link_lang(Spec),
+                      LinkTemplate = select_link_template(LinkLang, Target),
                       Env = pc_port_specs:environment(Spec),
                       Cmd = expand_command(LinkTemplate, Env,
                                            string:join(Bins, " "),
@@ -91,29 +92,77 @@ port_deps(SourceFiles) ->
 %%
 
 compile_sources(Config, Specs) ->
-    lists:foldl(
-      fun(Spec, NewBins) ->
-              Sources = pc_port_specs:sources(Spec),
-              Type    = pc_port_specs:type(Spec),
-              Env     = pc_port_specs:environment(Spec),
-              compile_each(Config, Sources, Type, Env, NewBins)
-      end, [], Specs).
+    {Res, Db} = lists:foldl(
+                  fun(Spec, NewBins) ->
+                          Sources = pc_port_specs:sources(Spec),
+                          Type    = pc_port_specs:type(Spec),
+                          Env     = pc_port_specs:environment(Spec),
+                          compile_each(Config, Sources, Type, Env, {NewBins, []})
+                  end, [], Specs),
+    %% Rewrite clang compile commands database file only if something
+    %% was compiled.
+    case Res of
+        [] ->
+            ok;
+        _ ->
+            {ok, ClangDbFile} = file:open("compile_commands.json", [write]),
+            ok = io:fwrite(ClangDbFile, "[~n", []),
+            lists:foreach(fun(E) -> ok = io:fwrite(ClangDbFile, E, []) end, Db),
+            ok = io:fwrite(ClangDbFile, "]~n", []),
+            ok = file:close(ClangDbFile)
+    end,
+    Res.
 
-compile_each(_Config, [], _Type, _Env, NewBins) ->
-    lists:reverse(NewBins);
-compile_each(Config, [Source | Rest], Type, Env, NewBins) ->
+compile_each(_State, [], _Type, _Env, {NewBins, CDB}) ->
+    {lists:reverse(NewBins), lists:reverse(CDB)};
+compile_each(State, [Source | Rest], Type, Env, {NewBins, CDB}) ->
     Ext = filename:extension(Source),
     Bin = pc_util:replace_extension(Source, Ext, ".o"),
+    Template = select_compile_template(Type, compiler(Ext)),
+    Cmd = expand_command(Template, Env, Source, Bin),
+    CDBEnt = cdb_entry(State, Source, Cmd, Rest),
+    NewCDB = [CDBEnt | CDB],
     case needs_compile(Source, Bin) of
         true ->
-            Template = select_compile_template(Type, compiler(Ext)),
-            Cmd = expand_command(Template, Env, Source, Bin),
-            ShOpts = [{env, Env}, return_on_error, {use_stdout, false}, {cd, rebar_state:dir(Config)}],
-            exec_compiler(Config, Source, Cmd, ShOpts),
-            compile_each(Config, Rest, Type, Env, [Bin | NewBins]);
+            ShOpts = [ {env, Env}
+                     , return_on_error
+                     , {use_stdout, false}
+                     , {cd, rebar_state:dir(State)}
+                     ],
+            exec_compiler(State, Source, Cmd, ShOpts),
+            compile_each(State, Rest, Type, Env,
+                         {[Bin | NewBins], NewCDB});
         false ->
-            compile_each(Config, Rest, Type, Env, NewBins)
+            compile_each(State, Rest, Type, Env, {NewBins, NewCDB})
     end.
+
+%% Generate a clang compilation db entry for Src and Cmd
+cdb_entry(State, Src, Cmd, SrcRest) ->
+    %% Omit all variables from cmd, and use that as cmd in
+    %% CDB, because otherwise clang-* will complain about it.
+    CDBCmd = string:join(
+               lists:filter(
+                 fun("$"++_) -> false;
+                    (_)      -> true
+                 end,
+                 string:tokens(Cmd, " ")),
+               " "),
+
+    Cwd = rebar_state:dir(State),
+    %% If there are more source files, make sure we end the CDB entry
+    %% with a comma.
+    Sep = case SrcRest of
+              [] -> "~n";
+              _  -> ",~n"
+          end,
+    %% CDB entry
+    lists:flatten(
+      io_lib:format(
+        "{ \"file\"      : ~p~n"
+        ", \"directory\" : ~p~n"
+        ", \"command\"   : ~p~n"
+        "}~s",
+        [Src, Cwd, CDBCmd, Sep])).
 
 %%
 %% Choose a compiler variable, based on a provided extension
@@ -191,8 +240,10 @@ needs_link(SoName, NewBins) ->
             MaxLastMod >= Other
     end.
 
-select_link_template(Target) ->
-    case pc_util:target_type(Target) of
-        drv -> "DRV_LINK_TEMPLATE";
-        exe -> "EXE_LINK_TEMPLATE"
+select_link_template(LinkLang, Target) ->
+    case {LinkLang, pc_util:target_type(Target)} of
+        {cc,  drv} -> "DRV_LINK_TEMPLATE";
+        {cxx, drv} -> "DRV_LINK_CXX_TEMPLATE";
+        {cc,  exe} -> "EXE_LINK_TEMPLATE";
+        {cxx, exe} -> "EXE_LINK_CXX_TEMPLATE"
     end.
