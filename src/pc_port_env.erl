@@ -133,7 +133,7 @@ expand_keys_in_value([Key | Rest], Value, Vars) ->
 filter_env(Env) ->
     Res = lists:foldl(fun
                           ({ArchRegex, Key, Value}, Acc) ->
-                             case rebar_utils:is_arch(ArchRegex) of
+                             case pc_util:is_arch(ArchRegex) of
                                  true -> [{Key,Value} | Acc];
                                  false -> Acc
                              end;
@@ -154,8 +154,8 @@ apply_defaults(Vars, Defaults) ->
                          case is_expandable(DefaultValue) of
                              true ->
                                  rebar_api:expand_env_variable(DefaultValue,
-                                                                 Key,
-                                                                 VarValue);
+                                                               Key,
+                                                               VarValue);
                              false -> VarValue
                          end
                  end,
@@ -205,29 +205,48 @@ erts_dir() ->
     lists:concat([code:root_dir(), "/erts-", erlang:system_info(version)]).
 
 default_env() ->
+    Arch = os:getenv("REBAR_TARGET_ARCH"),
+    Vsn = os:getenv("REBAR_TARGET_ARCH_VSN"),
     [
-     {"CC" , "cc"},
-     {"CXX", "c++"},
+     {"CC", get_tool(Arch, Vsn, "gcc", "cc")},
+     {"CXX", get_tool(Arch, Vsn, "g++", "c++")},
+     {"AR", get_tool(Arch, "ar", "ar")},
+     {"AS", get_tool(Arch, "as", "as")},
+     {"CPP", get_tool(Arch, Vsn, "cpp", "cpp")},
+     {"LD", get_tool(Arch, "ld", "ld")},
+     {"RANLIB", get_tool(Arch, Vsn, "ranlib", "ranlib")},
+     {"STRIP", get_tool(Arch, "strip", "strip")},
+     {"NM", get_tool(Arch, "nm", "nm")},
+     {"OBJCOPY", get_tool(Arch, "objcopy", "objcopy")},
+     {"OBJDUMP", get_tool(Arch, "objdump", "objdump")},
+
      {"DRV_CXX_TEMPLATE",
       "$CXX -c $CXXFLAGS $DRV_CFLAGS $PORT_IN_FILES -o $PORT_OUT_FILE"},
      {"DRV_CC_TEMPLATE",
       "$CC -c $CFLAGS $DRV_CFLAGS $PORT_IN_FILES -o $PORT_OUT_FILE"},
      {"DRV_LINK_TEMPLATE",
       "$CC $PORT_IN_FILES $LDFLAGS $DRV_LDFLAGS -o $PORT_OUT_FILE"},
+     {"DRV_LINK_CXX_TEMPLATE",
+      "$CXX $PORT_IN_FILES $LDFLAGS $DRV_LDFLAGS -o $PORT_OUT_FILE"},
      {"EXE_CXX_TEMPLATE",
       "$CXX -c $CXXFLAGS $EXE_CFLAGS $PORT_IN_FILES -o $PORT_OUT_FILE"},
      {"EXE_CC_TEMPLATE",
       "$CC -c $CFLAGS $EXE_CFLAGS $PORT_IN_FILES -o $PORT_OUT_FILE"},
      {"EXE_LINK_TEMPLATE",
       "$CC $PORT_IN_FILES $LDFLAGS $EXE_LDFLAGS -o $PORT_OUT_FILE"},
+     {"EXE_LINK_CXX_TEMPLATE",
+      "$CXX $PORT_IN_FILES $LDFLAGS $EXE_LDFLAGS -o $PORT_OUT_FILE"},
      {"DRV_CFLAGS" , "-g -Wall -fPIC -MMD $ERL_CFLAGS"},
      {"DRV_LDFLAGS", "-shared $ERL_LDFLAGS"},
      {"EXE_CFLAGS" , "-g -Wall -fPIC -MMD $ERL_CFLAGS"},
      {"EXE_LDFLAGS", "$ERL_LDFLAGS"},
 
-     {"ERL_CFLAGS", lists:concat([" -I\"", erl_interface_dir(include),
-                                  "\" -I\"", filename:join(erts_dir(), "include"),
-                                  "\" "])},
+     {"ERL_CFLAGS", lists:concat(
+                      [
+                       " -I\"", erl_interface_dir(include),
+                       "\" -I\"", filename:join(erts_dir(), "include"),
+                       "\" "
+                      ])},
      {"ERL_EI_LIBDIR", lists:concat(["\"", erl_interface_dir(lib), "\""])},
      {"ERL_LDFLAGS"  , " -L$ERL_EI_LIBDIR -lerl_interface -lei"},
      {"ERLANG_ARCH"  , rebar_api:wordsize()},
@@ -241,20 +260,20 @@ default_env() ->
      {"solaris.*-64$", "CXXFLAGS", "-D_REENTRANT -m64 $CXXFLAGS"},
      {"solaris.*-64$", "LDFLAGS", "-m64 $LDFLAGS"},
 
-     %% Linux specific flags for multiarch
-     {"linux.*-64$", "CFLAGS", "-m64 $CFLAGS"},
-     {"linux.*-64$", "CXXFLAGS", "-m64 $CXXFLAGS"},
-     {"linux.*-64$", "LDFLAGS", "$LDFLAGS"},
-
      %% OS X Leopard flags for 64-bit
      {"darwin9.*-64$", "CFLAGS", "-m64 $CFLAGS"},
      {"darwin9.*-64$", "CXXFLAGS", "-m64 $CXXFLAGS"},
-     {"darwin9.*-64$", "LDFLAGS", "-arch x86_64 $LDFLAGS"},
+     {"darwin9.*-64$", "LDFLAGS", "-arch x86_64 -flat_namespace -undefined suppress $LDFLAGS"},
+
+     %% OS X Lion onwards flags for 64-bit
+     {"darwin1[0-4].*-64$", "CFLAGS", "-m64 $CFLAGS"},
+     {"darwin1[0-4].*-64$", "CXXFLAGS", "-m64 $CXXFLAGS"},
+     {"darwin1[0-4].*-64$", "LDFLAGS", "-arch x86_64 -flat_namespace -undefined suppress $LDFLAGS"},
 
      %% OS X Snow Leopard, Lion, and Mountain Lion flags for 32-bit
      {"darwin1[0-2].*-32", "CFLAGS", "-m32 $CFLAGS"},
      {"darwin1[0-2].*-32", "CXXFLAGS", "-m32 $CXXFLAGS"},
-     {"darwin1[0-2].*-32", "LDFLAGS", "-arch i386 $LDFLAGS"},
+     {"darwin1[0-2].*-32", "LDFLAGS", "-arch i386 -flat_namespace -undefined suppress $LDFLAGS"},
 
      %% Windows specific flags
      %% add MS Visual C++ support to rebar on Windows
@@ -276,7 +295,17 @@ default_env() ->
      {"win32", "EXE_LINK_TEMPLATE",
       "$LINKER $PORT_IN_FILES $LDFLAGS $EXE_LDFLAGS /OUT:$PORT_OUT_FILE"},
      %% ERL_CFLAGS are ok as -I even though strictly it should be /I
-     {"win32", "ERL_LDFLAGS", " /LIBPATH:$ERL_EI_LIBDIR erl_interface.lib ei.lib"},
+     {"win32", "ERL_LDFLAGS",
+      " /LIBPATH:$ERL_EI_LIBDIR erl_interface.lib ei.lib"},
      {"win32", "DRV_CFLAGS", "/Zi /Wall $ERL_CFLAGS"},
      {"win32", "DRV_LDFLAGS", "/DLL $ERL_LDFLAGS"}
     ].
+
+get_tool(Arch, Tool, Default) ->
+    get_tool(Arch, false, Tool, Default).
+
+get_tool(false, _, _, Default) -> Default;
+get_tool("", _, _, Default) -> Default;
+get_tool(Arch, false, Tool, _Default) -> Arch++"-"++Tool;
+get_tool(Arch, "", Tool, _Default) -> Arch++"-"++Tool;
+get_tool(Arch, Vsn, Tool, _Default) -> Arch++"-"++Tool++"-"++Vsn.
