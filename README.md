@@ -83,8 +83,6 @@ BELOW HERE BE DRAGONS
 %%
 %% * port_env - Erlang list of key/value pairs which will control
 %%              the environment when running the compiler and linker.
-%%              Variables set in the surrounding system shell are taken
-%%              into consideration when expanding port_env.
 %%
 %%              By default, the following variables are defined:
 %%              CC       - C compiler
@@ -99,14 +97,16 @@ BELOW HERE BE DRAGONS
 %%              EXE_CFLAGS  - flags that will be used for compiling
 %%              EXE_LDFLAGS - flags that will be used for linking
 %%              ERL_EI_LIBDIR - ei library directory
-%%              DRV_CXX_TEMPLATE      - C++ command template
-%%              DRV_CC_TEMPLATE       - C command template
-%%              DRV_LINK_TEMPLATE     - C Linker command template
-%%              DRV_LINK_CXX_TEMPLATE - C++ Linker command template
-%%              EXE_CXX_TEMPLATE      - C++ command template
-%%              EXE_CC_TEMPLATE       - C command template
-%%              EXE_LINK_TEMPLATE     - C Linker command template
-%%              EXE_LINK_CXX_TEMPLATE - C++ Linker command template
+%%              DRV_CXX_TEMPLATE  - C++ command template
+%%              DRV_CC_TEMPLATE   - C command template
+%%              DRV_LINK_TEMPLATE - Linker command template
+%%              EXE_CXX_TEMPLATE  - C++ command template
+%%              EXE_CC_TEMPLATE   - C command template
+%%              EXE_LINK_TEMPLATE - Linker command template
+%%              PORT_IN_FILES - contains a space separated list of input
+%%                   file(s), (used in command template)
+%%              PORT_OUT_FILE - contains the output filename (used in
+%%                   command template)
 %%
 %%              Note that if you wish to extend (vs. replace) these variables,
 %%              you MUST include a shell-style reference in your definition.
@@ -123,10 +123,4 @@ BELOW HERE BE DRAGONS
 %%              {port_env, [{"x86_64.*-linux", "CFLAGS",
 %%                           "$CFLAGS -X86Options"}]}
 %%
-%%              Cross-arch environment variables to configure toolchain:
-%%              GET_ARCH to set the tool chain name to use
-%%              GET_ARCH_WORDSIZE (optional - to determine word size)"
-%%              word size is 32
-%%              GET_ARCH_VSN (optional - "
-%%              l version of CC/CXX is requested),
 ```
