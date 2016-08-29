@@ -35,18 +35,15 @@
          objects/1,
          sources/1,
          target/1,
-         type/1,
-         link_lang/1
+         type/1
         ]).
 -export_type([spec/0]).
 
 -record(spec, {type::'drv' | 'exe',
-               link_lang::'cc' | 'cxx',
                target::file:filename(),
                sources = [] :: [file:filename(), ...],
                objects = [] :: [file:filename(), ...],
-               opts = [] :: list() | []}).
-
+               opts = [] ::list() | []}).
 -opaque spec() :: #spec{}.
 
 
@@ -68,12 +65,11 @@ construct(State) ->
 
 %% == Spec Accessors ==
 
-environment(#spec{opts = Opts})        -> proplists:get_value(env, Opts).
-objects(#spec{objects = Objects})      -> Objects.
-sources(#spec{sources = Sources})      -> Sources.
-target(#spec{target = Target})         -> Target.
-type(#spec{type = Type})               -> Type.
-link_lang(#spec{link_lang = LinkLang}) -> LinkLang.
+environment(#spec{opts = Opts})   -> proplists:get_value(env, Opts).
+objects(#spec{objects = Objects}) -> Objects.
+sources(#spec{sources = Sources}) -> Sources.
+target(#spec{target = Target})    -> Target.
+type(#spec{type = Type})          -> Type.
 
 %%%===================================================================
 %%% Internal Functions
@@ -99,7 +95,6 @@ port_spec_from_legacy(Config) ->
     %% Get the list of source files from port_sources
     Sources = port_sources(rebar_state:dir(Config), rebar_state:get(Config, port_sources, ["c_src/*.c"])),
     #spec { type = pc_util:target_type(Target),
-            link_lang = cc,
             target = maybe_switch_extension(os:type(), Target),
             sources = Sources,
             objects = port_objects(Sources),
@@ -119,9 +114,9 @@ port_objects(SourceFiles) ->
     [pc_util:replace_extension(O, ".o") || O <- SourceFiles].
 
 filter_port_spec({ArchRegex, _, _, _}) ->
-    pc_util:is_arch(ArchRegex);
+    rebar_utils:is_arch(ArchRegex);
 filter_port_spec({ArchRegex, _, _}) ->
-    pc_util:is_arch(ArchRegex);
+    rebar_utils:is_arch(ArchRegex);
 filter_port_spec({_, _}) ->
     true.
 
@@ -134,24 +129,13 @@ get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
                                         Source1 = filename:join(rebar_state:dir(Config), Source),
                                         filelib:wildcard(Source1)
                                 end, Sources),
-    LinkLang =
-        case lists:any(
-               fun(Src) ->
-                       pc_compilation:compiler(filename:extension(Src)) == "$CXX"
-               end,
-               SourceFiles)
-        of
-            true  -> cxx;
-            false -> cc
-        end,
     Target1 = filename:join(rebar_state:dir(Config), Target),
     ObjectFiles = [pc_util:replace_extension(O, ".o") || O <- SourceFiles],
-    #spec{type      = pc_util:target_type(Target1),
-          target    = coerce_extension(OsType, Target1),
-          link_lang = LinkLang,
-          sources   = SourceFiles,
-          objects   = ObjectFiles,
-          opts      = [port_opt(Config, O) || O <- fill_in_defaults(Opts)]}.
+    #spec{type    = pc_util:target_type(Target1),
+          target  = coerce_extension(OsType, Target1),
+          sources = SourceFiles,
+          objects = ObjectFiles,
+          opts    = [port_opt(Config, O) || O <- fill_in_defaults(Opts)]}.
 
 coerce_extension({win32, nt}, Target) ->
     switch_to_dll_or_exe(Target);
