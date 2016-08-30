@@ -92,16 +92,17 @@ port_deps(SourceFiles) ->
 %%
 
 compile_sources(Config, Specs) ->
-    {Res, Db} = lists:foldl(
-                  fun(Spec, NewBins) ->
-                          Sources = pc_port_specs:sources(Spec),
-                          Type    = pc_port_specs:type(Spec),
-                          Env     = pc_port_specs:environment(Spec),
-                          compile_each(Config, Sources, Type, Env, {NewBins, []})
-                  end, [], Specs),
+    {NewBins, Db} =
+        lists:foldl(
+          fun(Spec, Acc) ->
+                  Sources = pc_port_specs:sources(Spec),
+                  Type    = pc_port_specs:type(Spec),
+                  Env     = pc_port_specs:environment(Spec),
+                  compile_each(Config, Sources, Type, Env, Acc)
+          end, {[], []}, Specs),
     %% Rewrite clang compile commands database file only if something
     %% was compiled.
-    case Res of
+    case NewBins of
         [] ->
             ok;
         _ ->
@@ -111,7 +112,7 @@ compile_sources(Config, Specs) ->
             ok = io:fwrite(ClangDbFile, "]~n", []),
             ok = file:close(ClangDbFile)
     end,
-    Res.
+    NewBins.
 
 compile_each(_State, [], _Type, _Env, {NewBins, CDB}) ->
     {lists:reverse(NewBins), lists:reverse(CDB)};
