@@ -131,7 +131,7 @@ get_port_spec(Config, OsType, {Arch, Target, Sources}) ->
     get_port_spec(Config, OsType, {Arch, Target, Sources, []});
 get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
     SourceFiles = lists:flatmap(fun(Source) ->
-                                        Source1 = escape_path(filename:join(rebar_state:dir(Config), Source)),
+                                        Source1 = rebar_utils:escape_chars(filename:join(rebar_state:dir(Config), Source)),
                                         filelib:wildcard(Source1)
                                 end, Sources),
     LinkLang =
@@ -186,6 +186,3 @@ port_opt(State, {env, Env}) ->
     {env, PortEnv};
 port_opt(_State, Opt) ->
     Opt.
-
-escape_path(Str) ->
-    re:replace(Str, "([ ()?])", "\\\\&", [global, {return, list}]).
