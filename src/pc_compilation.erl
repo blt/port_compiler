@@ -102,15 +102,17 @@ compile_sources(Config, Specs) ->
           end, {[], []}, Specs),
     %% Rewrite clang compile commands database file only if something
     %% was compiled.
-    case NewBins of
-        [] ->
+    case {NewBins, rebar_state:get(Config, pc_clang_db, false)} of
+        {[], _} ->
             ok;
-        _ ->
+        {_, true} ->
             {ok, ClangDbFile} = file:open("compile_commands.json", [write]),
             ok = io:fwrite(ClangDbFile, "[~n", []),
             lists:foreach(fun(E) -> ok = io:fwrite(ClangDbFile, E, []) end, Db),
             ok = io:fwrite(ClangDbFile, "]~n", []),
-            ok = file:close(ClangDbFile)
+            ok = file:close(ClangDbFile);
+        _ ->
+            ok
     end,
     NewBins.
 
