@@ -107,7 +107,10 @@ port_spec_from_legacy(Config) ->
 
 port_sources(WorkDir, Sources) ->
     lists:flatmap(fun (Source) ->
-                      filelib:wildcard(Source, WorkDir)
+                          case filelib:wildcard(Source, WorkDir)of
+                              [] -> [Source];
+                              FileList -> FileList
+                          end
                   end, Sources).
 
 maybe_switch_extension({win32, nt}, Target) ->
@@ -135,7 +138,10 @@ get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
           fun(Source) ->
                   Source1 = rebar_utils:escape_chars(
                               filename:join(rebar_state:dir(Config), Source)),
-                  filelib:wildcard(Source1)
+                  case filelib:wildcard(Source1) of
+                      [] -> [Source1];
+                      FileList -> FileList
+                  end
           end, Sources),
     LinkLang =
         case lists:any(
