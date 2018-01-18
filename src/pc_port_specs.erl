@@ -32,6 +32,7 @@
          construct/1,
          %% spec accessors
          environment/1,
+         environment/2,
          objects/1,
          sources/1,
          target/1,
@@ -69,6 +70,9 @@ construct(State) ->
 %% == Spec Accessors ==
 
 environment(#spec{opts = Opts})        -> proplists:get_value(env, Opts).
+environment(#spec{opts = Opts}, State) ->
+    proplists:get_value(env, Opts) ++
+        try_and_get_env(State).
 objects(#spec{objects = Objects})      -> Objects.
 sources(#spec{sources = Sources})      -> Sources.
 target(#spec{target = Target})         -> Target.
@@ -78,6 +82,14 @@ link_lang(#spec{link_lang = LinkLang}) -> LinkLang.
 %%%===================================================================
 %%% Internal Functions
 %%%===================================================================
+
+try_and_get_env(State) ->
+    case catch rebar_state:env(State) of
+        {'EXIT', _} ->
+            [];
+        Env ->
+            Env
+    end.
 
 port_spec_from_legacy(Config) ->
     %% Get the target from the so_name variable

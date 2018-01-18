@@ -60,7 +60,7 @@ compile_and_link(State, Specs) ->
                   true ->
                       LinkLang = pc_port_specs:link_lang(Spec),
                       LinkTemplate = select_link_template(LinkLang, Target),
-                      Env = pc_port_specs:environment(Spec),
+                      Env = pc_port_specs:environment(Spec, State),
                       Cmd = expand_command(LinkTemplate, Env,
                                            pc_util:strjoin(Bins, " "),
                                            Target),
@@ -91,18 +91,18 @@ port_deps(SourceFiles) ->
 %% == compilation ==
 %%
 
-compile_sources(Config, Specs) ->
+compile_sources(State, Specs) ->
     {NewBins, Db} =
         lists:foldl(
           fun(Spec, Acc) ->
                   Sources = pc_port_specs:sources(Spec),
                   Type    = pc_port_specs:type(Spec),
-                  Env     = pc_port_specs:environment(Spec),
-                  compile_each(Config, Sources, Type, Env, Acc)
+                  Env     = pc_port_specs:environment(Spec, State),
+                  compile_each(State, Sources, Type, Env, Acc)
           end, {[], []}, Specs),
     %% Rewrite clang compile commands database file only if something
     %% was compiled.
-    case {NewBins, rebar_state:get(Config, pc_clang_db, false)} of
+    case {NewBins, rebar_state:get(State, pc_clang_db, false)} of
         {[], _} ->
             ok;
         {_, true} ->
