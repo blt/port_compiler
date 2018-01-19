@@ -145,13 +145,19 @@ get_port_spec(Config, OsType, {Target, Sources}) ->
 get_port_spec(Config, OsType, {Arch, Target, Sources}) ->
     get_port_spec(Config, OsType, {Arch, Target, Sources, []});
 get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
+    Env = rebar_state:env(Config),
     SourceFiles =
         lists:flatmap(
           fun(Source) ->
-                  Source1 = rebar_utils:escape_chars(
-                              filename:join(rebar_state:dir(Config), Source)),
+                  Source1 =
+                      lists:foldl(
+                        fun({Key, Value}, Acc) ->
+                                rebar_utils:expand_env_variable(Acc, Key, Value)
+                        end, Source, Env),
+                  Source2 = rebar_utils:escape_chars(
+                              filename:join(rebar_state:dir(Config), Source1)),
                   case filelib:wildcard(Source1) of
-                      [] -> [Source1];
+                      [] -> [Source2];
                       FileList -> FileList
                   end
           end, Sources),
