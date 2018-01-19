@@ -149,11 +149,7 @@ get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
     SourceFiles =
         lists:flatmap(
           fun(Source) ->
-                  Source1 =
-                      lists:foldl(
-                        fun({Key, Value}, Acc) ->
-                                rebar_utils:expand_env_variable(Acc, Key, Value)
-                        end, Source, Env),
+                  Source1 = expand_env(Source, Env),
                   Source2 = rebar_utils:escape_chars(
                               filename:join(rebar_state:dir(Config), Source1)),
                   case filelib:wildcard(Source1) of
@@ -179,6 +175,18 @@ get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
           sources   = SourceFiles,
           objects   = ObjectFiles,
           opts      = [port_opt(Config, O) || O <- fill_in_defaults(Opts)]}.
+
+expand_env(Source, Env) ->
+    case rebar_string:chr(Source, $$) of
+        0 ->
+            %% No variables to expand. Also hides undef on older rebar3.
+            Source;
+        _ ->
+            lists:foldl(
+              fun({Key, Value}, Acc) ->
+                      rebar_utils:expand_env_variable(Acc, Key, Value)
+              end, Source, Env)
+    end.
 
 coerce_extension({win32, nt}, Target) ->
     switch_to_dll_or_exe(Target);
