@@ -6,6 +6,8 @@
         , get_arch/0
         , wordsize/0
         , is_arch/1
+        , strtok/2
+        , strjoin/2
         ]).
 -export_type([]).
 
@@ -141,7 +143,7 @@ cross_sizeof(Arch, Type) ->
     ShOpts = [{use_stdout, false}, return_on_error],
     {error, {_,Res}} = rebar_utils:sh(Cmd, ShOpts),
     ok = file:delete(TempFile),
-    case string:tokens(Res, ":") of
+    case strtok(Res, ":") of
         [_, Ln | _] ->
             try list_to_integer(Ln) of
                 NumBytes -> integer_to_list(NumBytes*8)
@@ -152,6 +154,15 @@ cross_sizeof(Arch, Type) ->
         _ ->
             ""
     end.
+
+strtok(Str, SepList) ->
+    case erlang:function_exported(string, lexemes, 2) of
+        true -> string:lexemes(Str, SepList);
+        false -> apply(string, tokens, [Str, SepList])
+    end.
+
+strjoin(L, Sep) ->
+    lists:flatten(lists:join(Sep, L)).
 
 mktempfile(Suffix) ->
     {A,B,C} = rebar_now(),
