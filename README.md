@@ -89,7 +89,7 @@ BELOW HERE BE DRAGONS
 %%                               ["c_src/nif.c",
 %%                                "${REBAR_DEPS_DIR}/foo/bar.c"]}]}.
 %%
-%%                This is a _very_ good way to be able to use you code both
+%%                This is a _very_ good way to be able to use your code both
 %%                as a top level app and a dependency.
 %%
 %%                CAVEAT! Not using {} is broken for the moment.
