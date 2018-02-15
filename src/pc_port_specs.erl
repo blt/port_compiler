@@ -184,6 +184,10 @@ expand_env(Source, Env) ->
         _ ->
             lists:foldl(
               fun({Key, Value}, Acc) ->
+                      %% TODO: the expand_env_variable/3 only expands
+                      %% variables delimited by whitespace and inside
+                      %% ${}. Either fix or add a new function to
+                      %% rebar3 or make a new function here in pc.
                       rebar_utils:expand_env_variable(Acc, Key, Value)
               end, Source, Env)
     end.
