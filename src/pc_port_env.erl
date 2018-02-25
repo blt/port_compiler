@@ -165,7 +165,7 @@ apply_defaults(Vars, Defaults) ->
 get_defines(_State) ->
     %% RawDefines = rebar_config:get_xconf(Config, defines, []),
     RawDefines = [], %% TODO: I'm not sure what this was...
-    Defines = string:join(["-D" ++ D || D <- RawDefines], " "),
+    Defines = pc_util:strjoin(["-D" ++ D || D <- RawDefines], " "),
     [{"ERL_CFLAGS", "$ERL_CFLAGS " ++ Defines}].
 
 os_env() ->

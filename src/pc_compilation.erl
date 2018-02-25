@@ -62,7 +62,7 @@ compile_and_link(State, Specs) ->
                       LinkTemplate = select_link_template(LinkLang, Target),
                       Env = pc_port_specs:environment(Spec),
                       Cmd = expand_command(LinkTemplate, Env,
-                                           string:join(Bins, " "),
+                                           pc_util:strjoin(Bins, " "),
                                            Target),
                       rebar_api:info("Linking ~s", [Target]),
                       rebar_utils:sh(Cmd, [{env, Env}, {cd, rebar_state:dir(State)}]);
@@ -143,12 +143,12 @@ compile_each(State, [Source | Rest], Type, Env, {NewBins, CDB}) ->
 cdb_entry(State, Src, Cmd, SrcRest) ->
     %% Omit all variables from cmd, and use that as cmd in
     %% CDB, because otherwise clang-* will complain about it.
-    CDBCmd = string:join(
+    CDBCmd = pc_util:strjoin(
                lists:filter(
                  fun("$"++_) -> false;
                     (_)      -> true
                  end,
-                 string:tokens(Cmd, " ")),
+                 pc_util:strtok(Cmd, " ")),
                " "),
 
     Cwd = rebar_state:dir(State),
