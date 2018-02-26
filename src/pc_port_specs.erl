@@ -69,9 +69,8 @@ construct(State) ->
     end.
 
 create_env(State, Spec) ->
-    Opts = rebar_state:opts(State),
     pc_port_specs:environment(Spec) ++
-        try_and_create_env(State, Opts).
+        try_and_create_env(State).
 
 %% == Spec Accessors ==
 
@@ -87,11 +86,11 @@ link_lang(#spec{link_lang = LinkLang}) -> LinkLang.
 %%% Internal Functions
 %%%===================================================================
 
-try_and_create_env(State, Opts) ->
+try_and_create_env(State) ->
     _ = code:ensure_loaded(rebar_env),
-    case erlang:function_exported(rebar_env, create_env, 2) of
+    case erlang:function_exported(rebar_env, create_env, 1) of
         false -> [];
-        true -> rebar_env:create_env(State, Opts)
+        true -> rebar_env:create_env(State)
     end.
 
 port_spec_from_legacy(Config) ->
@@ -148,8 +147,7 @@ get_port_spec(Config, OsType, {Target, Sources}) ->
 get_port_spec(Config, OsType, {Arch, Target, Sources}) ->
     get_port_spec(Config, OsType, {Arch, Target, Sources, []});
 get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
-    StateOpts = rebar_state:opts(Config),
-    Env = try_and_create_env(Config, StateOpts),
+    Env = try_and_create_env(Config),
     SourceFiles =
         lists:flatmap(
           fun(Source) ->
