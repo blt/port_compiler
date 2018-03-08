@@ -161,8 +161,22 @@ strtok(Str, SepList) ->
         false -> apply(string, tokens, [Str, SepList])
     end.
 
+%% Lifted lists:join/2 from OTP-19 to use with OTP-17 and OTP-18.
+%% TODO: remove when pc requires OTP >=19.
+lists_join(Sep, L) ->
+    case erlang:function_exported(lists, join, 2) of
+        true -> lists:join(Sep, L);
+        false -> lists_join1(Sep, L)
+    end.
+
+lists_join1(_Sep, []) -> [];
+lists_join1(Sep, [H|T]) -> [H|lists_join1_prepend(Sep, T)].
+
+lists_join1_prepend(_Sep, []) -> [];
+lists_join1_prepend(Sep, [H|T]) -> [Sep,H|lists_join1_prepend(Sep,T)].
+
 strjoin(L, Sep) ->
-    lists:flatten(lists:join(Sep, L)).
+    lists:flatten(lists_join(Sep, L)).
 
 mktempfile(Suffix) ->
     {A,B,C} = rebar_now(),
