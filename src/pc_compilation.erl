@@ -60,7 +60,7 @@ compile_and_link(State, Specs) ->
                   true ->
                       LinkLang = pc_port_specs:link_lang(Spec),
                       LinkTemplate = select_link_template(LinkLang, Target),
-                      Env = pc_port_specs:environment(Spec),
+                      Env = pc_port_specs:create_env(State, Spec),
                       Cmd = expand_command(LinkTemplate, Env,
                                            pc_util:strjoin(Bins, " "),
                                            Target),
@@ -97,7 +97,7 @@ compile_sources(Config, Specs) ->
           fun(Spec, Acc) ->
                   Sources = pc_port_specs:sources(Spec),
                   Type    = pc_port_specs:type(Spec),
-                  Env     = pc_port_specs:environment(Spec),
+                  Env     = pc_port_specs:create_env(Config, Spec),
                   compile_each(Config, Sources, Type, Env, Acc)
           end, {[], []}, Specs),
     %% Rewrite clang compile commands database file only if something
