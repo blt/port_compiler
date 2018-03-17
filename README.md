@@ -25,6 +25,12 @@ Add the plugin to your `rebar.config`:
     }.
 
 
+If you want to use tools like clang-tidy, don't forget to enable the compile commands db like this:
+
+```
+{pc_clang_db, true}.
+```
+
 From your existing application:
 
 
