@@ -12,9 +12,7 @@ Use In Your Project
 
 Add the plugin to your `rebar.config`:
 
-    {plugins, [
-        { pc, {git, "git@github.com:blt/port_compiler.git", {branch, "master"}}}
-    ]}.
+    {plugins, [pc]}.
     {provider_hooks,
      [
       {pre,
