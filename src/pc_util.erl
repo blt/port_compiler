@@ -8,6 +8,7 @@
         , is_arch/1
         , strtok/2
         , strjoin/2
+        , strchr/2
         ]).
 -export_type([]).
 
@@ -177,6 +178,11 @@ lists_join1_prepend(Sep, [H|T]) -> [Sep,H|lists_join1_prepend(Sep,T)].
 
 strjoin(L, Sep) ->
     lists:flatten(lists_join(Sep, L)).
+
+strchr(S, C) when is_integer(C) -> strchr(S, C, 1).
+strchr([C|_Cs], C, I) -> I;
+strchr([_|Cs], C, I) -> strchr(Cs, C, I+1);
+strchr([], _C, _I) -> 0.
 
 mktempfile(Suffix) ->
     {A,B,C} = rebar_now(),
