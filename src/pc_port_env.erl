@@ -43,8 +43,7 @@ construct(State) ->
 construct(State, ExtraEnv) ->
     DefaultEnv  = filter_env(default_env()),
     PortEnv     = filter_env(rebar_state:get(State, port_env, [])),
-    Defines     = get_defines(State),
-    OverrideEnv = Defines ++ PortEnv ++ ExtraEnv,
+    OverrideEnv = PortEnv ++ ExtraEnv,
 
     RawEnv = apply_defaults(os_env(), DefaultEnv) ++ OverrideEnv,
     {ok, expand_vars_loop(merge_each_var(RawEnv))}.
@@ -161,12 +160,6 @@ apply_defaults(Vars, Defaults) ->
                  end,
                  dict:from_list(Vars),
                  dict:from_list(Defaults))).
-
-get_defines(_State) ->
-    %% RawDefines = rebar_config:get_xconf(Config, defines, []),
-    RawDefines = [], %% TODO: I'm not sure what this was...
-    Defines = pc_util:strjoin(["-D" ++ D || D <- RawDefines], " "),
-    [{"ERL_CFLAGS", "$ERL_CFLAGS " ++ Defines}].
 
 os_env() ->
     ReOpts = [{return, list}, {parts, 2}, unicode],
