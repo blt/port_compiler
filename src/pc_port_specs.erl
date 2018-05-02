@@ -179,7 +179,7 @@ get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
           opts      = [port_opt(Config, O) || O <- fill_in_defaults(Opts)]}.
 
 expand_env(Source, Env) ->
-    case rebar_string:chr(Source, $$) of
+    case pc_util:strchr(Source, $$) of
         0 ->
             %% No variables to expand. Also hides undef on older rebar3.
             Source;
