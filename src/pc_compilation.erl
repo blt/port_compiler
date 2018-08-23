@@ -182,7 +182,12 @@ compiler(_)      -> "$CC".
 expand_command(TmplName, Env, InFiles, OutFile) ->
     Cmd0 = proplists:get_value(TmplName, Env),
     Cmd1 = rebar_api:expand_env_variable(Cmd0, "PORT_IN_FILES", InFiles),
-    rebar_api:expand_env_variable(Cmd1, "PORT_OUT_FILE", OutFile).
+    OutFile1 =
+        case re:run(OutFile, " ") of
+            nomatch -> OutFile;
+            _ -> lists:concat(["\"", OutFile, "\""])
+        end,
+    rebar_api:expand_env_variable(Cmd1, "PORT_OUT_FILE", OutFile1).
 
 exec_compiler(_Config, Source, Cmd, ShOpts) ->
     case rebar_utils:sh(Cmd, ShOpts) of
