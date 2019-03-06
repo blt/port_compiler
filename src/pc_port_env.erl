@@ -280,12 +280,16 @@ default_env() ->
       "$CC /c $CFLAGS $DRV_CFLAGS $PORT_IN_FILES /Fo$PORT_OUT_FILE"},
      {"win32", "DRV_LINK_TEMPLATE",
       "$LINKER $PORT_IN_FILES $LDFLAGS $DRV_LDFLAGS /OUT:$PORT_OUT_FILE"},
+     {"win32", "DRV_LINK_CXX_TEMPLATE",
+      "$LINKER $PORT_IN_FILES $LDFLAGS $DRV_LDFLAGS /OUT:$PORT_OUT_FILE"},
      %% DRV_* and EXE_* Templates are identical
      {"win32", "EXE_CXX_TEMPLATE",
       "$CXX /c $CXXFLAGS $EXE_CFLAGS $PORT_IN_FILES /Fo$PORT_OUT_FILE"},
      {"win32", "EXE_CC_TEMPLATE",
       "$CC /c $CFLAGS $EXE_CFLAGS $PORT_IN_FILES /Fo$PORT_OUT_FILE"},
      {"win32", "EXE_LINK_TEMPLATE",
+      "$LINKER $PORT_IN_FILES $LDFLAGS $EXE_LDFLAGS /OUT:$PORT_OUT_FILE"},
+     {"win32", "EXE_LINK_CXX_TEMPLATE",
       "$LINKER $PORT_IN_FILES $LDFLAGS $EXE_LDFLAGS /OUT:$PORT_OUT_FILE"},
      %% ERL_CFLAGS are ok as -I even though strictly it should be /I
      {"win32", "ERL_LDFLAGS",
