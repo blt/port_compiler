@@ -38,7 +38,8 @@
          sources/1,
          target/1,
          type/1,
-         link_lang/1
+         link_lang/1,
+         object_file_ext/0
         ]).
 -export_type([spec/0]).
 
@@ -144,7 +145,8 @@ maybe_switch_extension(_OsType, Target) ->
     Target.
 
 port_objects(SourceFiles) ->
-    [pc_util:replace_extension(O, ".o") || O <- SourceFiles].
+    Ext = object_file_ext(),
+    [pc_util:replace_extension(O, Ext) || O <- SourceFiles].
 
 filter_port_spec({ArchRegex, _, _, _}) ->
     pc_util:is_arch(ArchRegex);
@@ -232,3 +234,9 @@ port_opt(State, {env, Env}) ->
     {env, PortEnv};
 port_opt(_State, Opt) ->
     Opt.
+
+object_file_ext() ->
+    case os:type() of
+        {win32,_} -> ".obj";
+        _         -> ".o"
+    end.
