@@ -12,22 +12,23 @@ Use In Your Project
 
 Add the plugin to your `rebar.config`:
 
-    {plugins, [pc]}.
-    {provider_hooks,
-     [
-      {pre,
-       [
-        {compile, {pc, compile}},
-        {clean, {pc, clean}}
-       ]
-      }
-     ]
-    }.
-
+```erlang
+{plugins, [pc]}.
+{provider_hooks,
+ [
+  {pre,
+   [
+    {compile, {pc, compile}},
+    {clean, {pc, clean}}
+   ]
+  }
+ ]
+}.
+```
 
 If you want to use tools like clang-tidy, don't forget to enable the compile commands db like this:
 
-```
+```erlang
 {pc_clang_db, true}.
 ```
 
