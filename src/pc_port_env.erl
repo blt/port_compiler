@@ -194,6 +194,15 @@ erl_interface_dir(Subdir) ->
         Dir -> Dir
     end.
 
+has_erl_interface() ->
+  list_to_integer(erlang:system_info(otp_release)) < 23.
+
+maybe_link_erl_interface() ->
+  case  has_erl_interface() of
+    true -> "-lerl_interface";
+    false -> ""
+  end.
+
 erts_dir() ->
     lists:concat([code:root_dir(), "/erts-", erlang:system_info(version)]).
 
@@ -241,7 +250,7 @@ default_env() ->
                        "\" "
                       ])},
      {"ERL_EI_LIBDIR", lists:concat(["\"", erl_interface_dir(lib), "\""])},
-     {"ERL_LDFLAGS"  , " -L$ERL_EI_LIBDIR -lerl_interface -lei"},
+     {"ERL_LDFLAGS"  , " -L$ERL_EI_LIBDIR " ++ maybe_link_erl_interface() ++ " -lei"},
      {"ERLANG_ARCH"  , rebar_api:wordsize()},
      {"ERLANG_TARGET", rebar_api:get_arch()},
 

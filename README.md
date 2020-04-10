@@ -110,7 +110,7 @@ BELOW HERE BE DRAGONS
 %%              CXXFLAGS - C++ compiler
 %%              LDFLAGS  - Link flags
 %%              ERL_CFLAGS  - default -I paths for erts and ei
-%%              ERL_LDFLAGS - default -L and -lerl_interface -lei
+%%              ERL_LDFLAGS - default -L and [-lerl_interface (when opt_release < 23)] -lei
 %%              DRV_CFLAGS  - flags that will be used for compiling
 %%              DRV_LDFLAGS - flags that will be used for linking
 %%              EXE_CFLAGS  - flags that will be used for compiling
