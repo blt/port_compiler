@@ -5,6 +5,5 @@
               {applications,[kernel,stdlib]},
               {env,[]},
               {modules,[]},
-              {maintainers,["Brian L. Troutwine","Tristan Sloughter"]},
               {licenses,["MIT"]},
               {links,[{"Github","https://github.com/blt/port_compiler"}]}]}.
