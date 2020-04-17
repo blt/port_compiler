@@ -129,8 +129,6 @@ maybe_report_wc(Source, Found) ->
     end,
     Found.
 
-wildcard(Source) ->
-    maybe_report_wc(Source, filelib:wildcard(Source)).
 wildcard(Source, WorkDir) ->
     maybe_report_wc(Source, filelib:wildcard(Source, WorkDir)).
 
@@ -164,7 +162,7 @@ get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
     SourceFiles =
         lists:flatmap(
           fun(Source) ->
-                  wildcard(expand_env(Source, Env))
+                  wildcard(expand_env(Source, Env), rebar_state:dir(Config))
           end, Sources),
     LinkLang =
         case lists:any(
