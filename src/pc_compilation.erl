@@ -120,7 +120,7 @@ compile_each(_State, [], _Type, _Env, {NewBins, CDB}) ->
     {lists:reverse(NewBins), lists:reverse(CDB)};
 compile_each(State, [Source | Rest], Type, Env, {NewBins, CDB}) ->
     Ext = filename:extension(Source),
-    Bin = pc_util:replace_extension(Source, Ext, ".o"),
+    Bin = pc_util:replace_extension(Source, Ext, pc_port_specs:object_file_ext()),
     Template = select_compile_template(Type, compiler(Ext)),
     Cmd = expand_command(Template, Env, Source, Bin),
     CDBEnt = cdb_entry(State, Source, Cmd, Rest),
