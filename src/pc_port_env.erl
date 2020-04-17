@@ -198,6 +198,12 @@ erts_dir() ->
     lists:concat([code:root_dir(), "/erts-", erlang:system_info(version)]).
 
 default_env() ->
+    ErlInterfaceIncludeDir = erl_interface_dir(include),
+    ErlInterfaceHeader = filename:join(ErlInterfaceIncludeDir, "erl_interface.h"),
+    ErlInterfaceLibs = case filelib:is_file(ErlInterfaceHeader) of
+                           true -> ["erl_interface", "ei"];
+                           false -> ["ei"]
+                       end,
     Arch = os:getenv("REBAR_TARGET_ARCH"),
     Vsn = os:getenv("REBAR_TARGET_ARCH_VSN"),
     [
@@ -236,12 +242,13 @@ default_env() ->
 
      {"ERL_CFLAGS", lists:concat(
                       [
-                       " -I\"", erl_interface_dir(include),
+                       " -I\"", ErlInterfaceIncludeDir,
                        "\" -I\"", filename:join(erts_dir(), "include"),
                        "\" "
                       ])},
      {"ERL_EI_LIBDIR", lists:concat(["\"", erl_interface_dir(lib), "\""])},
-     {"ERL_LDFLAGS"  , " -L$ERL_EI_LIBDIR -lerl_interface -lei"},
+     {"ERL_LDFLAGS"  , lists:concat([" -L$ERL_EI_LIBDIR"] ++
+                                    [" -l"++EiLib || EiLib <- ErlInterfaceLibs])},
      {"ERLANG_ARCH"  , rebar_api:wordsize()},
      {"ERLANG_TARGET", rebar_api:get_arch()},
 
@@ -293,7 +300,8 @@ default_env() ->
       "$LINKER $PORT_IN_FILES $LDFLAGS $EXE_LDFLAGS /OUT:$PORT_OUT_FILE"},
      %% ERL_CFLAGS are ok as -I even though strictly it should be /I
      {"win32", "ERL_LDFLAGS",
-      " /LIBPATH:$ERL_EI_LIBDIR erl_interface.lib ei.lib"},
+      lists:concat([" /LIBPATH:$ERL_EI_LIBDIR "] ++
+                    [EiLib++".lib " || EiLib <- ErlInterfaceLibs])},
      {"win32", "DRV_CFLAGS", "/Zi /Wall $ERL_CFLAGS"},
      {"win32", "DRV_LDFLAGS", "/DLL $ERL_LDFLAGS"}
     ].
