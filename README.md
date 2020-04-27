@@ -12,22 +12,23 @@ Use In Your Project
 
 Add the plugin to your `rebar.config`:
 
-    {plugins, [pc]}.
-    {provider_hooks,
-     [
-      {pre,
-       [
-        {compile, {pc, compile}},
-        {clean, {pc, clean}}
-       ]
-      }
-     ]
-    }.
-
+```erlang
+{plugins, [pc]}.
+{provider_hooks,
+ [
+  {pre,
+   [
+    {compile, {pc, compile}},
+    {clean, {pc, clean}}
+   ]
+  }
+ ]
+}.
+```
 
 If you want to use tools like clang-tidy, don't forget to enable the compile commands db like this:
 
-```
+```erlang
 {pc_clang_db, true}.
 ```
 
@@ -101,7 +102,10 @@ BELOW HERE BE DRAGONS
 %% * port_env - Erlang list of key/value pairs which will control
 %%              the environment when running the compiler and linker.
 %%              Variables set in the surrounding system shell are taken
-%%              into consideration when expanding port_env.
+%%              into consideration when expanding port_env. Note that
+%%              for ERL_LDFLAGS, -lerl_interface is used for only those
+%%              Erlang/OTP versions where it exists (those prior to
+%%              version 23.0).
 %%
 %%              By default, the following variables are defined:
 %%              CC       - C compiler
