@@ -159,6 +159,7 @@ get_port_spec(Config, OsType, {Arch, Target, Sources}) ->
     get_port_spec(Config, OsType, {Arch, Target, Sources, []});
 get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
     Env = try_and_create_env(Config),
+    ProjectRoot = rebar_state:dir(Config),
     SourceFiles =
         lists:flatmap(
           fun(Source) ->
@@ -174,7 +175,7 @@ get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
             true  -> cxx;
             false -> cc
         end,
-    Target1 = filename:join(rebar_state:dir(Config), Target),
+    Target1 = filename:join(ProjectRoot, Target),
     ObjectFiles = [pc_util:replace_extension(O, ".o") || O <- SourceFiles],
     #spec{type      = pc_util:target_type(Target1),
           target    = coerce_extension(OsType, Target1),
