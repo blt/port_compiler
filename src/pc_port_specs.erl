@@ -176,12 +176,11 @@ get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
             false -> cc
         end,
     Target1 = filename:join(ProjectRoot, Target),
-    ObjectFiles = [pc_util:replace_extension(O, ".o") || O <- SourceFiles],
     #spec{type      = pc_util:target_type(Target1),
           target    = coerce_extension(OsType, Target1),
           link_lang = LinkLang,
           sources   = SourceFiles,
-          objects   = ObjectFiles,
+          objects   = port_objects(SourceFiles),
           opts      = [port_opt(Config, O) || O <- fill_in_defaults(Opts)]}.
 
 expand_env(Source, Env) ->
