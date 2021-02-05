@@ -64,7 +64,7 @@ compile_and_link(State, Specs) ->
                       Cmd = expand_command(LinkTemplate, Env,
                                            pc_util:strjoin(Bins, " "),
                                            Target),
-                      rebar_api:info("Linking ~s", [Target]),
+                      rebar_api:info("Linking ~ts", [Target]),
                       rebar_utils:sh(Cmd, [{env, Env}, {cd, rebar_state:dir(State)}]);
                   false ->
                       ok
@@ -193,14 +193,14 @@ exec_compiler(_Config, Source, Cmd, ShOpts) ->
     case rebar_utils:sh(Cmd, ShOpts) of
         {error, {_RC, RawError}} ->
             AbsSource = filename:absname(Source),
-            rebar_api:info("Compiling ~s", [AbsSource]),
+            rebar_api:info("Compiling ~ts", [AbsSource]),
             Error = re:replace(RawError, Source, AbsSource,
                                [{return, list}, global]),
-            rebar_api:error("~s", [Error]),
+            rebar_api:error("~ts", [Error]),
             rebar_api:abort();
         {ok, Output} ->
-            rebar_api:info("Compiling ~s", [Source]),
-            rebar_api:debug("~s", [Output])
+            rebar_api:info("Compiling ~ts", [Source]),
+            rebar_api:debug("~ts", [Output])
     end.
 
 select_compile_template(drv, Compiler) ->
