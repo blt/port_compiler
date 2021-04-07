@@ -195,7 +195,7 @@ exec_compiler(_Config, Source, Cmd, ShOpts) ->
             AbsSource = filename:absname(Source),
             rebar_api:info("Compiling ~ts", [AbsSource]),
             Error = re:replace(RawError, Source, AbsSource,
-                               [{return, list}, global]),
+                               [{return, list}, global, unicode]),
             rebar_api:error("~ts", [Error]),
             rebar_api:abort();
         {ok, Output} ->
