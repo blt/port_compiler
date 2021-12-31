@@ -96,6 +96,12 @@ try_and_create_env(State) ->
 
 port_spec_from_legacy(Config) ->
     %% Get the target from the so_name variable
+    OutDir = case os:getenv("REBAR_BARE_COMPILER_OUTPUT_DIR", undefined) of
+                 undefined ->
+                     "priv";
+                 Dir ->
+                     filename:join(Dir, "priv")
+             end,
     Target = case rebar_state:get(Config, so_name, undefined) of
                  undefined ->
                      %% Generate a sensible default from app file
@@ -106,9 +112,9 @@ port_spec_from_legacy(Config) ->
                                           BAppName = rebar_app_info:name(CurrentApp),
                                           binary_to_list(BAppName)
                                   end,
-                     filename:join("priv", lists:concat([AppName, "_drv.so"]));
+                     filename:join(OutDir, lists:concat([AppName, "_drv.so"]));
                  AName ->
-                     filename:join("priv", AName)
+                     filename:join(OutDir, AName)
              end,
 
     %% Get the list of source files from port_sources
@@ -175,7 +181,14 @@ get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
             true  -> cxx;
             false -> cc
         end,
-    Target1 = filename:join(ProjectRoot, Target),
+   
+    Target1 =
+        case os:getenv("REBAR_BARE_COMPILER_OUTPUT_DIR", undefined) of
+            undefined ->
+                filename:join(ProjectRoot, Target);
+            Dir -> 
+                filename:join([ProjectRoot, Dir, Target])
+        end,
     #spec{type      = pc_util:target_type(Target1),
           target    = coerce_extension(OsType, Target1),
           link_lang = LinkLang,
