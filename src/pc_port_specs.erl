@@ -187,7 +187,7 @@ get_port_spec(Config, OsType, {_Arch, Target, Sources, Opts}) ->
             undefined ->
                 filename:join(ProjectRoot, Target);
             Dir -> 
-                filename:join([ProjectRoot, Dir, Target])
+                filename:join([Dir, Target])
         end,
     #spec{type      = pc_util:target_type(Target1),
           target    = coerce_extension(OsType, Target1),
