@@ -187,7 +187,7 @@ is_expandable(InStr) ->
     end.
 
 erl_interface_dir(Subdir) ->
-    case code:lib_dir(erl_interface, Subdir) of
+    case filename:join(code:lib_dir(erl_interface), Subdir) of
         {error, bad_name} ->
             throw({error, {erl_interface,Subdir,"code:lib_dir(erl_interface)"
                            "is unable to find the erl_interface library."}});
