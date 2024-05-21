@@ -1,6 +1,6 @@
 {application,pc,
              [{description,"a rebar3 port compiler for native code"},
-              {vsn,"1.14.0"},
+              {vsn,"1.15.0"},
               {registered,[]},
               {applications,[kernel,stdlib]},
               {env,[]},
