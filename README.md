@@ -110,8 +110,9 @@ BELOW HERE BE DRAGONS
 %%              By default, the following variables are defined:
 %%              CC       - C compiler
 %%              CXX      - C++ compiler
-%%              CFLAGS   - C compiler
-%%              CXXFLAGS - C++ compiler
+%%              CPPFLAGS   - C/C++ compiler preprocessor flags
+%%              CFLAGS   - C compiler flags
+%%              CXXFLAGS - C++ compiler flags
 %%              LDFLAGS  - Link flags
 %%              ERL_CFLAGS  - default -I paths for erts and ei
 %%              ERL_LDFLAGS - default -L and -lerl_interface -lei
