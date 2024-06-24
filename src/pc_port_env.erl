@@ -303,7 +303,16 @@ default_env() ->
       lists:concat([" /LIBPATH:$ERL_EI_LIBDIR "] ++
                     [EiLib++".lib " || EiLib <- ErlInterfaceLibs])},
      {"win32", "DRV_CFLAGS", "/Zi /Wall $ERL_CFLAGS"},
-     {"win32", "DRV_LDFLAGS", "/DLL $ERL_LDFLAGS"}
+     {"win32", "DRV_LDFLAGS", "/DLL $ERL_LDFLAGS"},
+
+     {"openbsd", "CC", "cc"},
+     {"openbsd", "CXX", "c++"},
+     {"openbsd", "AR", "ar"},
+     {"openbsd", "AS", "as"},
+     {"openbsd", "CPP", "cpp"},
+     {"openbsd", "LD", "ld"},
+     {"openbsd", "STRIP", "strip"},
+     {"openbsd", "NM", "nm"}
     ].
 
 get_tool(Arch, Tool, Default) ->
