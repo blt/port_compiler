@@ -235,9 +235,9 @@ default_env() ->
       "$CC $PORT_IN_FILES $LDFLAGS $EXE_LDFLAGS -o $PORT_OUT_FILE"},
      {"EXE_LINK_CXX_TEMPLATE",
       "$CXX $PORT_IN_FILES $LDFLAGS $EXE_LDFLAGS -o $PORT_OUT_FILE"},
-     {"DRV_CFLAGS" , "-g -Wall -fPIC -MMD $ERL_CFLAGS"},
+     {"DRV_CFLAGS" , "-Wall -fPIC -MMD $ERL_CFLAGS"},
      {"DRV_LDFLAGS", "-shared $ERL_LDFLAGS"},
-     {"EXE_CFLAGS" , "-g -Wall -fPIC -MMD $ERL_CFLAGS"},
+     {"EXE_CFLAGS" , "-Wall -fPIC -MMD $ERL_CFLAGS"},
      {"EXE_LDFLAGS", "$ERL_LDFLAGS"},
 
      {"ERL_CFLAGS", lists:concat(
