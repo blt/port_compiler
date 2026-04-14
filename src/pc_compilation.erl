@@ -40,6 +40,7 @@
 compile_and_link(State, Specs) ->
     %% Compile each of the sources
     NewBins = compile_sources(State, Specs),
+    Root = rebar_state:dir(State),
 
     %% Make sure that the target directories exist
     lists:foreach(fun(Spec) ->
@@ -56,7 +57,8 @@ compile_and_link(State, Specs) ->
               AllBins = [sets:from_list(Bins),
                          sets:from_list(NewBins)],
               Intersection = sets:intersection(AllBins),
-              case needs_link(Target, sets:to_list(Intersection)) of
+              BinFullPaths = [filename:join(Root, D) || D <- sets:to_list(Intersection)],
+              case needs_link(Target, BinFullPaths) of
                   true ->
                       LinkLang = pc_port_specs:link_lang(Spec),
                       LinkTemplate = select_link_template(LinkLang, Target),
@@ -65,19 +67,32 @@ compile_and_link(State, Specs) ->
                                            pc_util:strjoin(Bins, " "),
                                            Target),
                       rebar_api:info("Linking ~ts", [Target]),
-                      rebar_utils:sh(Cmd, [{env, Env}, {cd, rebar_state:dir(State)}]);
+                      CD = rebar_state:dir(State),
+                      rebar_api:debug("Link command: ~s~n"
+                                      "Current dir: ~p~n"
+                                      "Env: ~p", [Cmd, CD, Env]),
+                      {ok, Output} = rebar_utils:sh(Cmd, [{env, Env}, {cd, CD}]),
+                      rebar_api:debug("Linker output: ~ts", [Output]),
+                      ok;
                   false ->
+                      rebar_api:debug("Skip linking ~p, up to date", [Target]),
                       ok
               end
       end, Specs).
 
-clean(_State, Specs) ->
+clean(State, Specs) ->
+    Root = rebar_state:dir(State),
     lists:foreach(fun(Spec) ->
                           Target = pc_port_specs:target(Spec),
                           Objects = pc_port_specs:objects(Spec),
+                          ObjectsFullPaths = [filename:join(Root, O) || O <- Objects],
+                          PortDeps = port_deps(ObjectsFullPaths),
+                          rebar_api:debug("Deleting target: ~p", [Target]),
                           rebar_file_utils:delete_each([Target]),
-                          rebar_file_utils:delete_each(Objects),
-                          rebar_file_utils:delete_each(port_deps(Objects))
+                          rebar_api:debug("Deleting obj files: ~p", [ObjectsFullPaths]),
+                          rebar_file_utils:delete_each(ObjectsFullPaths),
+                          rebar_api:debug("Deleting port deps: ~p", [PortDeps]),
+                          rebar_file_utils:delete_each(PortDeps)
                   end, Specs).
 
 %%%===================================================================
@@ -125,7 +140,7 @@ compile_each(State, [Source | Rest], Type, Env, {NewBins, CDB}) ->
     Cmd = expand_command(Template, Env, Source, Bin),
     CDBEnt = cdb_entry(State, Source, Cmd, Rest),
     NewCDB = [CDBEnt | CDB],
-    case needs_compile(Source, Bin) of
+    case needs_compile(Source, Bin, rebar_state:dir(State)) of
         true ->
             ShOpts = [ {env, Env}
                      , return_on_error
@@ -136,6 +151,7 @@ compile_each(State, [Source | Rest], Type, Env, {NewBins, CDB}) ->
             compile_each(State, Rest, Type, Env,
                          {[Bin | NewBins], NewCDB});
         false ->
+            rebar_api:debug("Skip compilation ~p, up to date", [Bin]),
             compile_each(State, Rest, Type, Env, {NewBins, NewCDB})
     end.
 
@@ -190,17 +206,23 @@ expand_command(TmplName, Env, InFiles, OutFile) ->
     rebar_api:expand_env_variable(Cmd1, "PORT_OUT_FILE", OutFile1).
 
 exec_compiler(_Config, Source, Cmd, ShOpts) ->
+    rebar_api:info("Compiling ~ts", [Source]),
+    rebar_api:debug("Compile command: ~s~n"
+                    "Current dir: ~p~n"
+                    "Env: ~p",
+                    [Cmd, proplists:get_value(cd, ShOpts),
+                     proplists:get_value(env, ShOpts)]),
     case rebar_utils:sh(Cmd, ShOpts) of
-        {error, {_RC, RawError}} ->
+        {error, {RC, RawError}} ->
             AbsSource = filename:absname(Source),
-            rebar_api:info("Compiling ~ts", [AbsSource]),
             Error = re:replace(RawError, Source, AbsSource,
                                [{return, list}, global, unicode]),
-            rebar_api:error("~ts", [Error]),
+            rebar_api:error("Compiler returned: ~p~n"
+                            "Output: ~ts~n"
+                            "Raw output: ~s", [RC, Error, RawError]),
             rebar_api:abort();
         {ok, Output} ->
-            rebar_api:info("Compiling ~ts", [Source]),
-            rebar_api:debug("~ts", [Output])
+            rebar_api:debug("Compiler output: ~ts", [Output])
     end.
 
 select_compile_template(drv, Compiler) ->
@@ -214,8 +236,12 @@ select_compile_drv_template("$CXX") -> "DRV_CXX_TEMPLATE".
 select_compile_exe_template("$CC")  -> "EXE_CC_TEMPLATE";
 select_compile_exe_template("$CXX") -> "EXE_CXX_TEMPLATE".
 
-needs_compile(Source, Bin) ->
-    needs_link(Bin, [Source|bin_deps(Bin)]).
+needs_compile(Source, Bin, Root) ->
+    FullSource = filename:join(Root, Source),
+    FullBin = filename:join(Root, Bin),
+    Deps = bin_deps(FullBin),
+    DepsFullPaths = [filename:join(Root, D) || D <- Deps],
+    needs_link(FullBin, [FullSource|DepsFullPaths]).
 
 %% NOTE: This relies on -MMD being passed to the compiler and returns an
 %% empty list if the .d file is not available.  This means header deps are
@@ -224,14 +250,14 @@ bin_deps(Bin) ->
     [DepFile] = port_deps([Bin]),
     case file:read_file(DepFile) of
         {ok, Deps} ->
-            parse_bin_deps(list_to_binary(Bin), Deps);
+            parse_bin_deps(Deps);
         {error, _Err} ->
             []
     end.
 
-parse_bin_deps(Bin, Deps) ->
+parse_bin_deps(Deps) ->
     Ds = re:split(Deps, "\\s*\\\\\\R\\s*|\\s+", [{return, binary}]),
-    [D || D <- Ds, D =/= <<>>, D =/= <<Bin/binary,":">>].
+    [D || D <- Ds, D =/= <<>> andalso binary:last(D) =/= $:].
 
 %%
 %% == linking ==
