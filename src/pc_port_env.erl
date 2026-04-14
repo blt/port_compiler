@@ -277,33 +277,33 @@ default_env() ->
 
      %% Windows specific flags
      %% add MS Visual C++ support to rebar on Windows
-     {"win32", "CC", "cl.exe"},
-     {"win32", "CXX", "cl.exe"},
-     {"win32", "LINKER", "link.exe"},
-     {"win32", "DRV_CXX_TEMPLATE",
+     {"win32|windows", "CC", "cl.exe"},
+     {"win32|windows", "CXX", "cl.exe"},
+     {"win32|windows", "LINKER", "link.exe"},
+     {"win32|windows", "DRV_CXX_TEMPLATE",
       %% DRV_* and EXE_* Templates are identical
       "$CXX /c $CXXFLAGS $DRV_CFLAGS $PORT_IN_FILES /Fo$PORT_OUT_FILE"},
-     {"win32", "DRV_CC_TEMPLATE",
+     {"win32|windows", "DRV_CC_TEMPLATE",
       "$CC /c $CFLAGS $DRV_CFLAGS $PORT_IN_FILES /Fo$PORT_OUT_FILE"},
-     {"win32", "DRV_LINK_TEMPLATE",
+     {"win32|windows", "DRV_LINK_TEMPLATE",
       "$LINKER $PORT_IN_FILES $LDFLAGS $DRV_LDFLAGS /OUT:$PORT_OUT_FILE"},
-     {"win32", "DRV_LINK_CXX_TEMPLATE",
+     {"win32|windows", "DRV_LINK_CXX_TEMPLATE",
       "$LINKER $PORT_IN_FILES $LDFLAGS $DRV_LDFLAGS /OUT:$PORT_OUT_FILE"},
      %% DRV_* and EXE_* Templates are identical
-     {"win32", "EXE_CXX_TEMPLATE",
+     {"win32|windows", "EXE_CXX_TEMPLATE",
       "$CXX /c $CXXFLAGS $EXE_CFLAGS $PORT_IN_FILES /Fo$PORT_OUT_FILE"},
-     {"win32", "EXE_CC_TEMPLATE",
+     {"win32|windows", "EXE_CC_TEMPLATE",
       "$CC /c $CFLAGS $EXE_CFLAGS $PORT_IN_FILES /Fo$PORT_OUT_FILE"},
-     {"win32", "EXE_LINK_TEMPLATE",
+     {"win32|windows", "EXE_LINK_TEMPLATE",
       "$LINKER $PORT_IN_FILES $LDFLAGS $EXE_LDFLAGS /OUT:$PORT_OUT_FILE"},
-     {"win32", "EXE_LINK_CXX_TEMPLATE",
+     {"win32|windows", "EXE_LINK_CXX_TEMPLATE",
       "$LINKER $PORT_IN_FILES $LDFLAGS $EXE_LDFLAGS /OUT:$PORT_OUT_FILE"},
      %% ERL_CFLAGS are ok as -I even though strictly it should be /I
-     {"win32", "ERL_LDFLAGS",
+     {"win32|windows", "ERL_LDFLAGS",
       lists:concat([" /LIBPATH:$ERL_EI_LIBDIR "] ++
                     [EiLib++".lib " || EiLib <- ErlInterfaceLibs])},
-     {"win32", "DRV_CFLAGS", "/Zi /Wall $ERL_CFLAGS"},
-     {"win32", "DRV_LDFLAGS", "/DLL $ERL_LDFLAGS"}
+     {"win32|windows", "DRV_CFLAGS", "/Zi /Wall $ERL_CFLAGS"},
+     {"win32|windows", "DRV_LDFLAGS", "/DLL $ERL_LDFLAGS"}
     ].
 
 get_tool(Arch, Tool, Default) ->
